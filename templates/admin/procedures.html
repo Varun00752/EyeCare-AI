@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Master Procedures Catalog - Admin Console - EyeCare AI{% endblock %}
+{% block content %}
+<div class="container py-2">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="bi bi-gear-wide-connected text-teal me-2"></i>Master Clinical Procedures</h2>
+      <p class="text-muted small mb-0">System-wide ophthalmology catalog used across all hospital price comparisons</p>
+    </div>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-speedometer2 me-1"></i> Dashboard
+    </a>
+  </div>
+
+  <!-- Add Master Procedure Card -->
+  <div class="card border-0 shadow-sm bg-white p-4 mb-4">
+    <h5 class="fw-bold mb-3"><i class="bi bi-plus-circle text-teal me-2"></i>Register New Clinical Procedure</h5>
+    <form method="POST" action="{{ url_for('admin.procedures') }}" class="row g-3">
+      <input type="hidden" name="action" value="add">
+      <div class="col-md-5">
+        <label class="form-label small fw-semibold text-muted">Procedure Name *</label>
+        <input type="text" name="name" class="form-control" placeholder="e.g. Corneal Collagen Cross-Linking (CXL)" required>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold text-muted">Category *</label>
+        <select name="category" class="form-select" required>
+          <option value="Surgery">Surgery</option>
+          <option value="Laser">Laser</option>
+          <option value="Injection">Injection</option>
+          <option value="Checkup">Checkup</option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold text-muted">Clinical Description</label>
+        <input type="text" name="description" class="form-control" placeholder="Short description of the procedure...">
+      </div>
+
+      <div class="col-12 text-end">
+        <button type="submit" class="btn btn-primary px-4 fw-semibold"><i class="bi bi-check-lg me-1"></i> Add to Master Catalog</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Procedures List -->
+  <div class="card border-0 shadow-sm bg-white">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0"><i class="bi bi-collection text-teal me-2"></i>Current Procedures Catalog ({{ procedures|length }})</h5>
+      <span class="badge bg-secondary-subtle text-secondary">{{ procedures|length }} standard procedures</span>
+    </div>
+    <div class="card-body p-0">
+      {% if procedures %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Procedure Name</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Hospitals Offering</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in procedures %}
+                <tr>
+                  <td><strong>#{{ p.id }}</strong></td>
+                  <td class="fw-bold text-dark">{{ p.name }}</td>
+                  <td>
+                    {% if p.category == 'Surgery' %}
+                      <span class="badge bg-primary">Surgery</span>
+                    {% elif p.category == 'Laser' %}
+                      <span class="badge bg-danger">Laser</span>
+                    {% elif p.category == 'Injection' %}
+                      <span class="badge bg-warning text-dark">Injection</span>
+                    {% else %}
+                      <span class="badge bg-info text-dark">Checkup</span>
+                    {% endif %}
+                  </td>
+                  <td class="small text-secondary">{{ p.description or '-' }}</td>
+                  <td>
+                    <span class="badge bg-light text-dark border">{{ p.hospital_procedures|length }} hospitals</span>
+                  </td>
+                  <td class="text-end">
+                    <form method="POST" action="{{ url_for('admin.procedures') }}" class="d-inline" onsubmit="return confirm('Delete procedure {{ p.name }}?');">
+                      <input type="hidden" name="action" value="delete">
+                      <input type="hidden" name="procedure_id" value="{{ p.id }}">
+                      <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Procedure"><i class="bi bi-trash"></i></button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

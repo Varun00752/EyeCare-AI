@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Hospitals Directory - EyeCare AI{% endblock %}
+{% block content %}
+<div class="container py-2">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="bi bi-hospital text-teal me-2"></i>Verified Eye Hospitals</h2>
+      <p class="text-muted small mb-0">Browse admin-verified ophthalmology centers and eye specialty clinics</p>
+    </div>
+  </div>
+
+  <!-- Search and Filter Form -->
+  <div class="card p-3 mb-4 border-0 shadow-sm bg-white">
+    <form method="GET" action="{{ url_for('main.hospitals') }}" class="row g-2 align-items-center">
+      <div class="col-md-5">
+        <label class="form-label small fw-semibold text-muted mb-1">Filter by Procedure</label>
+        <select name="procedure" class="form-select">
+          <option value="">All Eye Procedures</option>
+          {% for p in procedures %}
+            <option value="{{ p.id }}" {% if selected_procedure == p.id %}selected{% endif %}>{{ p.name }} ({{ p.category }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold text-muted mb-1">Filter by City</label>
+        <select name="city" class="form-select">
+          <option value="">All Cities</option>
+          {% for c in cities %}
+            <option value="{{ c }}" {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-3 d-flex align-items-end gap-2 mt-3 mt-md-0">
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1"></i> Filter</button>
+        {% if selected_city or selected_procedure %}
+          <a href="{{ url_for('main.hospitals') }}" class="btn btn-outline-secondary">Reset</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- Results Count -->
+  <div class="d-flex justify-content-between align-items-center mb-3 text-muted small">
+    <div>Showing <strong>{{ hospitals|length }}</strong> verified hospital(s)</div>
+    <div class="badge bg-light text-secondary border">Sample prices for demo</div>
+  </div>
+
+  <!-- Hospital Cards -->
+  {% if hospitals %}
+    <div class="row g-4">
+      {% for h in hospitals %}
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0 bg-white d-flex flex-column">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-patch-check-fill me-1"></i>Verified</span>
+                <span class="badge bg-light text-dark border"><i class="bi bi-geo-alt me-1"></i>{{ h.city }}</span>
+              </div>
+              <h5 class="card-title fw-bold text-dark mt-2 mb-1">{{ h.name }}</h5>
+              <p class="text-muted small mb-2"><i class="bi bi-pin-map me-1"></i>{{ h.address or 'Address on request' }}</p>
+              {% if h.phone %}
+                <p class="text-muted small mb-2"><i class="bi bi-telephone me-1"></i>{{ h.phone }}</p>
+              {% endif %}
+              <p class="card-text text-secondary small mb-3">
+                {{ h.description|truncate(120, True, '...') if h.description else 'Specialized ophthalmic and vitreoretinal treatment center.' }}
+              </p>
+
+              <!-- Top procedures badges -->
+              <div class="mb-3">
+                <div class="small fw-semibold text-muted mb-1">Key Procedures & Sample Prices:</div>
+                <div class="d-flex flex-wrap gap-1">
+                  {% for hp in h.hospital_procedures[:3] %}
+                    <span class="badge bg-light text-dark border small">
+                      {{ hp.procedure.name }}: ₹{{ "{:,}".format(hp.price_min) }} - ₹{{ "{:,}".format(hp.price_max) }}
+                    </span>
+                  {% endfor %}
+                  {% if h.hospital_procedures|length > 3 %}
+                    <span class="badge bg-secondary-subtle text-secondary small">+{{ h.hospital_procedures|length - 3 }} more</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <div class="card-footer bg-white border-top p-3 mt-auto d-flex gap-2">
+              <a href="{{ url_for('main.hospital_detail', hospital_id=h.id) }}" class="btn btn-sm btn-outline-primary flex-grow-1">
+                <i class="bi bi-info-circle me-1"></i> View Details
+              </a>
+              {% if current_user.is_authenticated and current_user.role == 'patient' %}
+                <a href="{{ url_for('patient.book_appointment', hospital_id=h.id) }}" class="btn btn-sm btn-primary">
+                  <i class="bi bi-calendar-plus me-1"></i> Book
+                </a>
+              {% else %}
+                <a href="{{ url_for('auth.login', next=url_for('patient.book_appointment', hospital_id=h.id)) }}" class="btn btn-sm btn-primary">
+                  <i class="bi bi-calendar-plus me-1"></i> Book
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card p-5 text-center bg-white border-0 shadow-sm">
+      <i class="bi bi-search fs-1 text-muted mb-3"></i>
+      <h4 class="fw-bold">No hospitals found</h4>
+      <p class="text-muted">No verified hospitals match the selected filter criteria. Try choosing another city or procedure.</p>
+      <div class="mt-2">
+        <a href="{{ url_for('main.hospitals') }}" class="btn btn-sm btn-outline-primary">Clear Filters</a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

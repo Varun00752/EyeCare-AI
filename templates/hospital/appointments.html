@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Hospital Appointments - {{ hospital.name }} - EyeCare AI{% endblock %}
+{% block content %}
+<div class="container py-2">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="bi bi-calendar-week text-teal me-2"></i>Patient Appointments</h2>
+      <p class="text-muted small mb-0">{{ hospital.name }} &bull; Review, accept, and manage consultation requests</p>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm bg-white">
+    <div class="card-body p-0">
+      {% if appointments %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Appt #</th>
+                <th>Patient Details</th>
+                <th>Procedure Requested</th>
+                <th>Appointment Date</th>
+                <th>Status</th>
+                <th>Attached Retinal Scan</th>
+                <th>Patient Notes</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for appt in appointments %}
+                <tr>
+                  <td><strong>#{{ appt.id }}</strong></td>
+                  <td>
+                    <strong>{{ appt.patient.user.name }}</strong>
+                    <div class="text-muted small">
+                      {{ appt.patient.age or 'Age N/A' }} yrs &bull; {{ appt.patient.gender or 'Gender N/A' }}
+                    </div>
+                    <div class="text-muted small"><i class="bi bi-telephone me-1"></i>{{ appt.patient.phone or appt.patient.user.email }}</div>
+                  </td>
+                  <td><span class="badge bg-light text-dark border">{{ appt.procedure.name }}</span></td>
+                  <td><strong>{{ appt.appt_date.strftime('%d %B %Y') }}</strong></td>
+                  <td>
+                    {% if appt.status == 'accepted' %}
+                      <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Accepted</span>
+                    {% elif appt.status == 'pending' %}
+                      <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Pending</span>
+                    {% elif appt.status == 'rejected' %}
+                      <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rejected</span>
+                    {% elif appt.status == 'cancelled' %}
+                      <span class="badge bg-secondary"><i class="bi bi-slash-circle me-1"></i>Cancelled</span>
+                    {% else %}
+                      <span class="badge bg-light text-dark">{{ appt.status }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if appt.scan %}
+                      <a href="{{ url_for('hospital.view_scan', scan_id=appt.scan.id) }}" class="btn btn-sm btn-outline-info">
+                        <i class="bi bi-eye me-1"></i> Scan #{{ appt.scan.id }} (Grade {{ appt.scan.predicted_grade }})
+                      </a>
+                    {% else %}
+                      <span class="text-muted small">No scan attached</span>
+                    {% endif %}
+                  </td>
+                  <td class="small text-muted">{{ appt.notes or '-' }}</td>
+                  <td class="text-end">
+                    {% if appt.status == 'pending' %}
+                      <form method="POST" action="{{ url_for('hospital.update_appointment', appointment_id=appt.id, action='accept') }}" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-success me-1"><i class="bi bi-check-lg"></i> Accept</button>
+                      </form>
+                      <form method="POST" action="{{ url_for('hospital.update_appointment', appointment_id=appt.id, action='reject') }}" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg"></i> Reject</button>
+                      </form>
+                    {% else %}
+                      <span class="text-muted small">No action needed</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="p-5 text-center text-muted">
+          <i class="bi bi-calendar-check display-4 text-secondary mb-3 d-block"></i>
+          <h5 class="fw-bold">No appointment requests found</h5>
+          <p class="text-muted mb-0">New patient bookings will appear here for review and confirmation.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

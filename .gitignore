@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Exclude all PDFs (as requested)
+*.pdf
+
+# Virtual environment
+.venv/
+venv/
+env/
+ENV/
+
+# SQLite database file (users can generate fresh with python seed.py)
+*.db
+*.sqlite3
+
+# Uploaded and generated runtime media (preserve folders via .gitkeep)
+static/uploads/*
+!static/uploads/.gitkeep
+static/heatmaps/*
+!static/heatmaps/.gitkeep
+static/reports/*
+!static/reports/.gitkeep
+
+# IDE and system metadata
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Manage Hospitals - Admin Console - EyeCare AI{% endblock %}
+{% block content %}
+<div class="container py-2">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="bi bi-building-check text-teal me-2"></i>Hospital Approvals & Network</h2>
+      <p class="text-muted small mb-0">Review new hospital registrations and manage verified partner facilities</p>
+    </div>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-speedometer2 me-1"></i> Dashboard
+    </a>
+  </div>
+
+  <!-- 1. Pending Approvals Section -->
+  <div class="card border-0 shadow-sm bg-white mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0 text-warning">
+        <i class="bi bi-clock-history me-2"></i>Pending Verification ({{ pending_hospitals|length }})
+      </h5>
+      <span class="badge bg-warning text-dark">Requires Decision</span>
+    </div>
+    <div class="card-body p-0">
+      {% if pending_hospitals %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Hospital Name</th>
+                <th>City & Address</th>
+                <th>Contact</th>
+                <th>Description</th>
+                <th class="text-end">Verification Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for h in pending_hospitals %}
+                <tr>
+                  <td>
+                    <strong>{{ h.name }}</strong>
+                    <div class="text-muted small">Registered: {{ h.user.created_at.strftime('%d %b %Y') if h.user else '-' }}</div>
+                  </td>
+                  <td>
+                    <span class="badge bg-light text-dark border">{{ h.city }}</span>
+                    <div class="small text-muted">{{ h.address or 'No address' }}</div>
+                  </td>
+                  <td>
+                    <div class="small"><strong>{{ h.user.email if h.user else '' }}</strong></div>
+                    <div class="small text-muted">{{ h.phone or 'No phone' }}</div>
+                  </td>
+                  <td class="small text-secondary">{{ h.description|truncate(80) or '-' }}</td>
+                  <td class="text-end">
+                    <form method="POST" action="{{ url_for('admin.decide_hospital', hospital_id=h.id, action='approve') }}" class="d-inline">
+                      <button type="submit" class="btn btn-sm btn-success me-1"><i class="bi bi-check-circle"></i> Approve</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin.decide_hospital', hospital_id=h.id, action='reject') }}" class="d-inline">
+                      <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle"></i> Reject</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="p-4 text-center text-muted">
+          <i class="bi bi-check-circle text-success fs-3 d-block mb-1"></i>
+          No pending hospital registrations. All partner applications have been processed.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 2. Approved Hospitals Section -->
+  <div class="card border-0 shadow-sm bg-white mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0 text-success">
+        <i class="bi bi-check-circle me-2"></i>Approved & Live Hospitals ({{ approved_hospitals|length }})
+      </h5>
+      <span class="badge bg-success-subtle text-success border border-success-subtle">Visible in Public Directory</span>
+    </div>
+    <div class="card-body p-0">
+      {% if approved_hospitals %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Hospital Name</th>
+                <th>City</th>
+                <th>Phone</th>
+                <th>Procedures Listed</th>
+                <th>Public Listing</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for h in approved_hospitals %}
+                <tr>
+                  <td><strong>{{ h.name }}</strong></td>
+                  <td><span class="badge bg-light text-dark border">{{ h.city }}</span></td>
+                  <td>{{ h.phone or '-' }}</td>
+                  <td><span class="badge bg-primary-subtle text-primary">{{ h.hospital_procedures|length }} procedures</span></td>
+                  <td>
+                    <a href="{{ url_for('main.hospital_detail', hospital_id=h.id) }}" target="_blank" class="small text-decoration-none">
+                      <i class="bi bi-box-arrow-up-right me-1"></i>View Page
+                    </a>
+                  </td>
+                  <td class="text-end">
+                    <form method="POST" action="{{ url_for('admin.decide_hospital', hospital_id=h.id, action='reject') }}" class="d-inline" onsubmit="return confirm('Revoke approval for {{ h.name }}?');">
+                      <button type="submit" class="btn btn-sm btn-outline-danger">Revoke</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 3. Rejected Hospitals Section if any -->
+  {% if rejected_hospitals %}
+    <div class="card border-0 shadow-sm bg-white">
+      <div class="card-header bg-white border-bottom py-3">
+        <h5 class="fw-bold mb-0 text-danger">
+          <i class="bi bi-x-circle me-2"></i>Rejected Hospitals ({{ rejected_hospitals|length }})
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Hospital Name</th>
+                <th>City</th>
+                <th>Email</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for h in rejected_hospitals %}
+                <tr>
+                  <td>{{ h.name }}</td>
+                  <td>{{ h.city }}</td>
+                  <td>{{ h.user.email if h.user else '' }}</td>
+                  <td class="text-end">
+                    <form method="POST" action="{{ url_for('admin.decide_hospital', hospital_id=h.id, action='approve') }}" class="d-inline">
+                      <button type="submit" class="btn btn-sm btn-outline-success">Re-Approve</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

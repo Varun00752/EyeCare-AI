@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Administrator Dashboard - EyeCare AI{% endblock %}
+{% block head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+<div class="container py-2">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="bi bi-shield-lock text-danger me-2"></i>Admin Management Console</h2>
+      <p class="text-muted small mb-0">Platform overview, hospital verification, and master clinical procedures</p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+      <a href="{{ url_for('admin.hospitals') }}" class="btn btn-outline-primary position-relative">
+        <i class="bi bi-building me-1"></i> Hospital Approvals
+        {% if pending_hospitals > 0 %}
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+            {{ pending_hospitals }}
+          </span>
+        {% endif %}
+      </a>
+      <a href="{{ url_for('admin.procedures') }}" class="btn btn-primary"><i class="bi bi-gear me-1"></i> Master Procedures</a>
+    </div>
+  </div>
+
+  <!-- Metric Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card p-3 border-0 bg-white">
+        <div class="text-muted small">Registered Users</div>
+        <div class="fs-4 fw-bold text-dark">{{ total_users }}</div>
+        <div class="small text-muted">{{ total_patients }} patients &bull; {{ total_hospitals }} hospitals</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card p-3 border-0 bg-white">
+        <div class="text-muted small">Hospital Network</div>
+        <div class="fs-4 fw-bold text-teal">{{ approved_hospitals }} Approved</div>
+        <div class="small text-warning fw-semibold">{{ pending_hospitals }} Pending Review</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card p-3 border-0 bg-white">
+        <div class="text-muted small">Retinal Scans Screened</div>
+        <div class="fs-4 fw-bold text-primary">{{ total_scans }}</div>
+        <div class="small text-muted">Diabetic retinopathy checks</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card p-3 border-0 bg-white">
+        <div class="text-muted small">Total Appointments</div>
+        <div class="fs-4 fw-bold text-success">{{ total_appointments }}</div>
+        <div class="small text-muted">Across all partner hospitals</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts & Quick Actions -->
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="card border-0 bg-white shadow-sm p-4 h-100">
+        <h5 class="fw-bold mb-3"><i class="bi bi-bar-chart-line text-teal me-2"></i>Retinal AI Grade Distribution</h5>
+        <div style="position: relative; height: 300px;">
+          <canvas id="gradeChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card border-0 bg-white shadow-sm p-4 h-100">
+        <h5 class="fw-bold mb-3"><i class="bi bi-activity text-teal me-2"></i>System Controls</h5>
+        <div class="list-group list-group-flush">
+          <a href="{{ url_for('admin.hospitals') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+            <div>
+              <div class="fw-bold text-primary"><i class="bi bi-hospital me-2"></i>Hospital Approvals</div>
+              <small class="text-muted">Review, verify, and approve partner hospital licenses</small>
+            </div>
+            <span class="badge bg-primary rounded-pill">{{ pending_hospitals }} pending</span>
+          </a>
+          <a href="{{ url_for('admin.procedures') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+            <div>
+              <div class="fw-bold text-teal"><i class="bi bi-list-check me-2"></i>Clinical Procedures</div>
+              <small class="text-muted">Manage standard surgical, laser, and injection catalog</small>
+            </div>
+            <i class="bi bi-chevron-right text-muted"></i>
+          </a>
+          <a href="{{ url_for('main.compare') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+            <div>
+              <div class="fw-bold text-dark"><i class="bi bi-tags me-2"></i>Live Price Comparison</div>
+              <small class="text-muted">Verify transparency and sample prices across cities</small>
+            </div>
+            <i class="bi bi-chevron-right text-muted"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const ctx = document.getElementById('gradeChart').getContext('2d');
+  const gradeCounts = {{ grade_counts | tojson }};
+  
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['0: No DR', '1: Mild', '2: Moderate', '3: Severe', '4: Proliferative'],
+      datasets: [{
+        label: 'Scans Screened',
+        data: [
+          gradeCounts['0'] || gradeCounts[0] || 0,
+          gradeCounts['1'] || gradeCounts[1] || 0,
+          gradeCounts['2'] || gradeCounts[2] || 0,
+          gradeCounts['3'] || gradeCounts[3] || 0,
+          gradeCounts['4'] || gradeCounts[4] || 0
+        ],
+        backgroundColor: [
+          '#10b981', // green
+          '#06b6d4', // cyan
+          '#f59e0b', // amber
+          '#ea580c', // orange
+          '#ef4444'  // red
+        ],
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1 }
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

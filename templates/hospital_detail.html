@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}{{ hospital.name }} - EyeCare AI{% endblock %}
+{% block content %}
+<div class="container py-2">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.hospitals') }}">Hospitals</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ hospital.name }}</li>
+    </ol>
+  </nav>
+
+  <div class="card border-0 shadow-sm bg-white p-4 mb-4">
+    <div class="row align-items-center">
+      <div class="col-lg-8">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-patch-check-fill me-1"></i>Verified Partner Hospital</span>
+          <span class="badge bg-light text-dark border"><i class="bi bi-geo-alt me-1"></i>{{ hospital.city }}</span>
+        </div>
+        <h2 class="fw-bold mb-2">{{ hospital.name }}</h2>
+        <p class="text-muted mb-2"><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ hospital.address or 'Address on request' }}</p>
+        {% if hospital.phone %}
+          <p class="text-muted mb-2"><i class="bi bi-telephone-fill text-primary me-1"></i>{{ hospital.phone }}</p>
+        {% endif %}
+        <p class="text-secondary mt-3 mb-0">{{ hospital.description or 'Specialized eye surgery and retinal laser care center.' }}</p>
+      </div>
+      <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
+        {% if current_user.is_authenticated and current_user.role == 'patient' %}
+          <a href="{{ url_for('patient.book_appointment', hospital_id=hospital.id) }}" class="btn btn-primary btn-lg shadow-sm">
+            <i class="bi bi-calendar2-check me-2"></i>Book Appointment
+          </a>
+        {% else %}
+          <a href="{{ url_for('auth.login', next=url_for('patient.book_appointment', hospital_id=hospital.id)) }}" class="btn btn-primary btn-lg shadow-sm">
+            <i class="bi bi-calendar2-check me-2"></i>Book Appointment
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Procedures & Transparent Pricing Table -->
+  <div class="card border-0 shadow-sm bg-white">
+    <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0"><i class="bi bi-tags text-teal me-2"></i>Available Procedures & Pricing</h5>
+      <span class="badge bg-light text-secondary border">Sample prices for demo</span>
+    </div>
+    <div class="card-body p-0">
+      {% if procedures_offered %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Procedure Name</th>
+                <th>Category</th>
+                <th>Price Range (INR)</th>
+                <th>Clinical Notes</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for hp in procedures_offered %}
+                <tr>
+                  <td class="fw-semibold text-dark">{{ hp.procedure.name }}</td>
+                  <td><span class="badge bg-light text-dark border">{{ hp.procedure.category }}</span></td>
+                  <td>
+                    <span class="fw-bold text-teal">₹{{ "{:,}".format(hp.price_min) }}</span> - 
+                    <span class="fw-bold text-teal">₹{{ "{:,}".format(hp.price_max) }}</span>
+                    <div class="text-muted" style="font-size: 0.75rem;">Sample prices for demo</div>
+                  </td>
+                  <td class="small text-muted">{{ hp.procedure.description|truncate(80) }}</td>
+                  <td class="text-end">
+                    <a href="{{ url_for('patient.book_appointment', hospital_id=hospital.id, procedure=hp.procedure_id) }}" class="btn btn-sm btn-outline-primary">
+                      Book This
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="p-4 text-center text-muted">
+          No procedures catalogued for this hospital yet.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

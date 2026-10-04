@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}New Retinal Scan - EyeCare AI{% endblock %}
+{% block content %}
+<div class="container py-2">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- DEMO MODE Banner (only if model is not loaded) -->
+      {% if is_demo %}
+      <div class="demo-banner d-flex align-items-center mb-4">
+        <i class="bi bi-cpu-fill fs-4 me-3"></i>
+        <div>
+          <div class="fw-bold">DEMO MODE Active</div>
+          <div class="small">The local deep learning model is running in simulated demo mode. Uploaded retinal fundus images will be preprocessed and evaluated with simulated Grad-CAM attention heatmaps.</div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="card border-0 shadow-sm bg-white p-4">
+        <div class="mb-4 text-center">
+          <div class="rounded-circle bg-teal-gradient d-inline-flex p-3 text-white mb-2 shadow-sm">
+            <i class="bi bi-camera-fill fs-2"></i>
+          </div>
+          <h3 class="fw-bold">Upload Retinal Fundus Image</h3>
+          <p class="text-muted small">Supports PNG, JPG, and JPEG images up to 5 MB</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('patient.scan_new') }}" enctype="multipart/form-data" id="scanForm">
+          <!-- Scan Type selection -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Scan Screening Type</label>
+            <div class="d-flex gap-3">
+              <div class="form-check p-3 border rounded flex-grow-1 bg-light">
+                <input class="form-check-input" type="radio" name="scan_type" id="typeDR" value="dr" checked>
+                <label class="form-check-label ms-1" for="typeDR">
+                  <strong class="d-block text-dark"><i class="bi bi-eye text-teal me-1"></i> Diabetic Retinopathy (DR)</strong>
+                  <span class="text-muted small">Retinal fundus image analysis for microaneurysms, hemorrhages, and exudates (Grades 0-4).</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Drag and Drop / File Input Box -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Select Retinal Image File *</label>
+            <div class="border border-2 border-dashed rounded-3 p-4 text-center bg-light" id="dropArea" style="cursor: pointer;">
+              <i class="bi bi-cloud-arrow-up text-teal display-4 mb-2 d-block"></i>
+              <h6 class="fw-bold mb-1">Click to browse or drag & drop fundus photo here</h6>
+              <p class="text-muted small mb-2">Allowed formats: .png, .jpg, .jpeg (Max 5 MB, Min 100x100px)</p>
+              <input type="file" name="image" id="fileInput" class="d-none" accept=".png, .jpg, .jpeg" required>
+            </div>
+          </div>
+
+          <!-- Image Preview Area -->
+          <div id="previewContainer" class="mb-4 text-center d-none">
+            <h6 class="fw-bold mb-2">Image Preview</h6>
+            <div class="position-relative d-inline-block border rounded p-2 bg-white shadow-sm">
+              <img id="imagePreview" src="" alt="Retinal Preview" style="max-height: 260px; max-width: 100%; border-radius: 8px;">
+              <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle" id="removeImgBtn">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+            <div class="small text-muted mt-1" id="fileMeta"></div>
+          </div>
+
+          <!-- Medical Disclaimer Box -->
+          <div class="medical-disclaimer-box mb-4">
+            <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>
+            <strong>Notice:</strong> This is an AI screening aid, not a medical diagnosis. Please consult a qualified ophthalmologist.
+          </div>
+
+          <!-- Submit Button with Spinner -->
+          <button type="submit" class="btn btn-primary w-100 py-3 fw-bold fs-5 shadow-sm" id="submitBtn">
+            <span id="btnText"><i class="bi bi-cpu me-2"></i>Analyze Retinal Image</span>
+            <span id="btnSpinner" class="d-none">
+              <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Preprocessing & Running AI Prediction...
+            </span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const dropArea = document.getElementById('dropArea');
+  const fileInput = document.getElementById('fileInput');
+  const previewContainer = document.getElementById('previewContainer');
+  const imagePreview = document.getElementById('imagePreview');
+  const removeImgBtn = document.getElementById('removeImgBtn');
+  const fileMeta = document.getElementById('fileMeta');
+  const scanForm = document.getElementById('scanForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const btnText = document.getElementById('btnText');
+  const btnSpinner = document.getElementById('btnSpinner');
+
+  dropArea.addEventListener('click', () => fileInput.click());
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropArea.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      dropArea.classList.add('border-primary', 'bg-white');
+    }, false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropArea.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      dropArea.classList.remove('border-primary', 'bg-white');
+    }, false);
+  });
+
+  dropArea.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    if (dt.files && dt.files[0]) {
+      fileInput.files = dt.files;
+      handleFile(dt.files[0]);
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (fileInput.files && fileInput.files[0]) {
+      handleFile(fileInput.files[0]);
+    }
+  });
+
+  function handleFile(file) {
+    if (!file.type.match('image.*')) {
+      alert('Please select an image file (.png, .jpg, .jpeg).');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size exceeds the 5 MB limit. Please select a smaller image.');
+      fileInput.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      imagePreview.src = e.target.result;
+      previewContainer.classList.remove('d-none');
+      fileMeta.textContent = `${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeImgBtn.addEventListener('click', () => {
+    fileInput.value = '';
+    imagePreview.src = '';
+    previewContainer.classList.add('d-none');
+    fileMeta.textContent = '';
+  });
+
+  scanForm.addEventListener('submit', () => {
+    if (fileInput.files.length > 0) {
+      submitBtn.disabled = true;
+      btnText.classList.add('d-none');
+      btnSpinner.classList.remove('d-none');
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Hospital Portal - EyeCare AI{% endblock %}
+{% block content %}
+<div class="container py-2">
+  <!-- Approval Status Alert -->
+  {% if hospital.approved == 0 %}
+    <div class="alert alert-warning border-warning shadow-sm mb-4">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-clock-history fs-3 me-3 text-warning"></i>
+        <div>
+          <h5 class="fw-bold mb-1">Awaiting Admin Approval</h5>
+          <p class="mb-0 small">Your hospital profile has been submitted and is pending verification by the EyeCare AI administrator. While pending, your facility is not displayed in the public directory, and adding or editing procedures is disabled.</p>
+        </div>
+      </div>
+    </div>
+  {% elif hospital.approved == 2 %}
+    <div class="alert alert-danger border-danger shadow-sm mb-4">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-x-circle-fill fs-3 me-3 text-danger"></i>
+        <div>
+          <h5 class="fw-bold mb-1">Application Rejected</h5>
+          <p class="mb-0 small">Your hospital registration was not approved by the administrator. Please contact system support for clarification.</p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="bi bi-hospital text-teal me-2"></i>{{ hospital.name }}</h2>
+      <p class="text-muted small mb-0">{{ hospital.city }} &bull; {{ hospital.address or 'Address not updated' }}</p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+      <a href="{{ url_for('hospital.profile') }}" class="btn btn-outline-secondary"><i class="bi bi-pencil me-1"></i> Edit Profile</a>
+      {% if hospital.approved == 1 %}
+        <a href="{{ url_for('hospital.procedures') }}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i> Manage Procedures</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Metric Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card p-3 border-0 bg-white">
+        <div class="text-muted small">Account Status</div>
+        <div class="fs-5 fw-bold">
+          {% if hospital.approved == 1 %}
+            <span class="badge bg-success">Approved & Live</span>
+          {% elif hospital.approved == 0 %}
+            <span class="badge bg-warning text-dark">Pending Admin Approval</span>
+          {% else %}
+            <span class="badge bg-danger">Rejected</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-3 border-0 bg-white">
+        <div class="text-muted small">Offered Procedures</div>
+        <div class="fs-5 fw-bold text-teal">{{ procedures_count }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-3 border-0 bg-white">
+        <div class="text-muted small">Pending Appointment Requests</div>
+        <div class="fs-5 fw-bold text-warning">{{ pending_appts|length }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Appointments Table -->
+  <div class="card border-0 bg-white shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+      <h5 class="fw-bold mb-0"><i class="bi bi-bell text-teal me-2"></i>Pending Patient Appointments</h5>
+      <a href="{{ url_for('hospital.appointments') }}" class="btn btn-sm btn-outline-secondary">View All Appointments</a>
+    </div>
+    <div class="card-body p-0">
+      {% if pending_appts %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Patient</th>
+                <th>Procedure</th>
+                <th>Requested Date</th>
+                <th>Attached Retinal Scan</th>
+                <th>Notes</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for appt in pending_appts %}
+                <tr>
+                  <td>
+                    <strong>{{ appt.patient.user.name }}</strong>
+                    <div class="text-muted small">{{ appt.patient.phone or appt.patient.user.email }}</div>
+                  </td>
+                  <td><span class="badge bg-light text-dark border">{{ appt.procedure.name }}</span></td>
+                  <td>{{ appt.appt_date.strftime('%d %B %Y') }}</td>
+                  <td>
+                    {% if appt.scan %}
+                      <a href="{{ url_for('hospital.view_scan', scan_id=appt.scan.id) }}" class="btn btn-sm btn-outline-info">
+                        <i class="bi bi-eye me-1"></i> Grade {{ appt.scan.predicted_grade }}
+                      </a>
+                    {% else %}
+                      <span class="text-muted small">None</span>
+                    {% endif %}
+                  </td>
+                  <td class="small text-muted">{{ appt.notes or '-' }}</td>
+                  <td class="text-end">
+                    <form method="POST" action="{{ url_for('hospital.update_appointment', appointment_id=appt.id, action='accept') }}" class="d-inline">
+                      <button type="submit" class="btn btn-sm btn-success me-1"><i class="bi bi-check-lg"></i> Accept</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('hospital.update_appointment', appointment_id=appt.id, action='reject') }}" class="d-inline">
+                      <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg"></i> Reject</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="p-4 text-center text-muted">
+          <i class="bi bi-check-circle fs-2 text-success mb-2 d-block"></i>
+          <p class="mb-0">No pending appointment requests. All caught up!</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

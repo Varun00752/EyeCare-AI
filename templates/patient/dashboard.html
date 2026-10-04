@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Patient Dashboard - EyeCare AI{% endblock %}
+{% block content %}
+<div class="container py-2">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="bi bi-person-badge text-teal me-2"></i>Welcome, {{ current_user.name }}</h2>
+      <p class="text-muted small mb-0">Patient Health Portal &bull; Medical history and appointment management</p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+      <a href="{{ url_for('patient.scan_new') }}" class="btn btn-primary shadow-sm"><i class="bi bi-plus-circle me-1"></i> New Eye Scan</a>
+      <a href="{{ url_for('main.hospitals') }}" class="btn btn-outline-primary"><i class="bi bi-search me-1"></i> Find Hospitals</a>
+    </div>
+  </div>
+
+  <!-- Quick Patient Info Card -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card p-3 border-0 bg-white">
+        <div class="text-muted small">Age & Gender</div>
+        <div class="fs-5 fw-bold">{{ current_user.patient.age or 'Not set' }} yrs / {{ current_user.patient.gender or 'Not set' }}</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card p-3 border-0 bg-white">
+        <div class="text-muted small">Diabetes History</div>
+        <div class="fs-5 fw-bold">{{ current_user.patient.diabetes_years or 0 }} Years</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card p-3 border-0 bg-white">
+        <div class="text-muted small">Total Scans Performed</div>
+        <div class="fs-5 fw-bold text-teal">{{ recent_scans|length }}</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card p-3 border-0 bg-white">
+        <div class="text-muted small">Active Appointments</div>
+        <div class="fs-5 fw-bold text-primary">{{ upcoming_appts|length }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Recent Scans -->
+    <div class="col-lg-7">
+      <div class="card border-0 bg-white shadow-sm h-100">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+          <h5 class="fw-bold mb-0"><i class="bi bi-clock-history text-teal me-2"></i>Recent Scans</h5>
+          <a href="{{ url_for('patient.scans') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+        </div>
+        <div class="card-body p-0">
+          {% if recent_scans %}
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Predicted Result</th>
+                    <th>Confidence</th>
+                    <th class="text-end">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for scan in recent_scans %}
+                    <tr>
+                      <td>{{ scan.created_at.strftime('%d %b %Y') }}</td>
+                      <td><span class="badge bg-secondary text-uppercase">{{ scan.scan_type }}</span></td>
+                      <td>
+                        {% if scan.predicted_grade == 0 %}
+                          <span class="badge bg-success">Grade 0: {{ scan.predicted_label }}</span>
+                        {% elif scan.predicted_grade == 1 %}
+                          <span class="badge bg-info text-dark">Grade 1: {{ scan.predicted_label }}</span>
+                        {% elif scan.predicted_grade == 2 %}
+                          <span class="badge bg-warning text-dark">Grade 2: {{ scan.predicted_label }}</span>
+                        {% elif scan.predicted_grade == 3 %}
+                          <span class="badge bg-orange text-white" style="background-color: #ea580c;">Grade 3: {{ scan.predicted_label }}</span>
+                        {% else %}
+                          <span class="badge bg-danger">Grade 4: {{ scan.predicted_label }}</span>
+                        {% endif %}
+                      </td>
+                      <td>{{ "%.1f"|format(scan.confidence * 100) }}%</td>
+                      <td class="text-end">
+                        <a href="{{ url_for('patient.scan_result', scan_id=scan.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                        <a href="{{ url_for('patient.download_pdf', scan_id=scan.id) }}" class="btn btn-sm btn-outline-secondary" title="Download PDF"><i class="bi bi-file-earmark-pdf"></i></a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="p-4 text-center text-muted">
+              <i class="bi bi-images fs-2 mb-2 d-block text-secondary"></i>
+              <p class="mb-2">No retinal scans uploaded yet.</p>
+              <a href="{{ url_for('patient.scan_new') }}" class="btn btn-sm btn-primary">Upload Your First Retinal Image</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Appointments -->
+    <div class="col-lg-5">
+      <div class="card border-0 bg-white shadow-sm h-100">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+          <h5 class="fw-bold mb-0"><i class="bi bi-calendar-event text-teal me-2"></i>Upcoming Appointments</h5>
+          <a href="{{ url_for('patient.appointments') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+        </div>
+        <div class="card-body p-0">
+          {% if upcoming_appts %}
+            <ul class="list-group list-group-flush">
+              {% for appt in upcoming_appts %}
+                <li class="list-group-item p-3">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-bold text-dark">{{ appt.procedure.name }}</span>
+                    {% if appt.status == 'accepted' %}
+                      <span class="badge bg-success">Confirmed</span>
+                    {% elif appt.status == 'pending' %}
+                      <span class="badge bg-warning text-dark">Pending</span>
+                    {% else %}
+                      <span class="badge bg-secondary">{{ appt.status }}</span>
+                    {% endif %}
+                  </div>
+                  <div class="text-muted small mb-1"><i class="bi bi-hospital me-1"></i>{{ appt.hospital.name }} ({{ appt.hospital.city }})</div>
+                  <div class="text-muted small"><i class="bi bi-calendar3 me-1"></i>Date: {{ appt.appt_date.strftime('%d %B %Y') }}</div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="p-4 text-center text-muted">
+              <i class="bi bi-calendar-x fs-2 mb-2 d-block text-secondary"></i>
+              <p class="mb-2">No active appointments scheduled.</p>
+              <a href="{{ url_for('main.hospitals') }}" class="btn btn-sm btn-outline-primary">Browse Hospitals to Book</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

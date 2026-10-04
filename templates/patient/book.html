@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Book Appointment - {{ hospital.name }} - EyeCare AI{% endblock %}
+{% block content %}
+<div class="container py-2">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm bg-white p-4">
+        <div class="mb-4 text-center">
+          <div class="rounded-circle bg-teal-gradient d-inline-flex p-3 text-white mb-2 shadow-sm">
+            <i class="bi bi-calendar2-plus fs-2"></i>
+          </div>
+          <h3 class="fw-bold">Schedule an Appointment</h3>
+          <p class="text-muted small">Hospital: <strong>{{ hospital.name }}</strong> ({{ hospital.city }})</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('patient.book_appointment', hospital_id=hospital.id) }}">
+          <!-- Select Procedure -->
+          <div class="mb-3">
+            <label for="procedure_id" class="form-label fw-semibold">Eye Procedure *</label>
+            <select class="form-select" id="procedure_id" name="procedure_id" required>
+              <option value="">-- Choose Procedure --</option>
+              {% for hp in procedures %}
+                <option value="{{ hp.procedure_id }}" {% if preselected_proc == hp.procedure_id %}selected{% endif %}>
+                  {{ hp.procedure.name }} (₹{{ "{:,}".format(hp.price_min) }} - ₹{{ "{:,}".format(hp.price_max) }})
+                </option>
+              {% endfor %}
+            </select>
+            <div class="form-text small text-muted">Prices shown are sample prices for demo. Final billing occurs at clinic.</div>
+          </div>
+
+          <!-- Appointment Date (Future dates only) -->
+          <div class="mb-3">
+            <label for="appt_date" class="form-label fw-semibold">Preferred Appointment Date *</label>
+            <input type="date" class="form-control" id="appt_date" name="appt_date" required>
+            <div class="form-text small text-muted">Appointments must be scheduled for a future calendar date.</div>
+          </div>
+
+          <!-- Attach Optional Retinal Scan -->
+          <div class="mb-3">
+            <label for="scan_id" class="form-label fw-semibold">Attach Previous Retinal Scan (Optional)</label>
+            <select class="form-select" id="scan_id" name="scan_id">
+              <option value="">-- No Scan Attached --</option>
+              {% for s in scans %}
+                <option value="{{ s.id }}" {% if preselected_scan == s.id %}selected{% endif %}>
+                  Scan #{{ s.id }} ({{ s.created_at.strftime('%d %b %Y') }}) - Grade {{ s.predicted_grade }}: {{ s.predicted_label }}
+                </option>
+              {% endfor %}
+            </select>
+            <div class="form-text small text-muted">Attaching your AI screening scan allows the consulting ophthalmologist to review your retinal findings ahead of your visit.</div>
+          </div>
+
+          <!-- Notes -->
+          <div class="mb-4">
+            <label for="notes" class="form-label fw-semibold">Symptoms / Patient Notes</label>
+            <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Describe symptoms, e.g., blurred vision, diabetic history duration, or previous treatments..."></textarea>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1 py-2 fw-semibold">Confirm Booking Request</button>
+            <a href="{{ url_for('main.hospital_detail', hospital_id=hospital.id) }}" class="btn btn-outline-secondary py-2">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Set minimum date picker to tomorrow
+  const dateInput = document.getElementById('appt_date');
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const minDateStr = tomorrow.toISOString().split('T')[0];
+  dateInput.min = minDateStr;
+  dateInput.value = minDateStr;
+</script>
+{% endblock %}

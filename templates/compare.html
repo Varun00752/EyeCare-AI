@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}Procedure Price Comparison - EyeCare AI{% endblock %}
+{% block head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+<div class="container py-2">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="bi bi-tags text-teal me-2"></i>Procedure Price Comparison</h2>
+      <p class="text-muted small mb-0">Compare estimated procedure costs across verified eye hospitals to make informed decisions</p>
+    </div>
+    <div class="badge bg-light text-secondary border px-3 py-2">
+      <i class="bi bi-info-circle me-1"></i> Sample prices for demo
+    </div>
+  </div>
+
+  <!-- Selector Form -->
+  <div class="card p-3 mb-4 border-0 shadow-sm bg-white">
+    <form method="GET" action="{{ url_for('main.compare') }}" class="row g-2 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label small fw-semibold text-muted mb-1">Select Procedure to Compare *</label>
+        <select name="procedure" class="form-select" required>
+          <option value="">-- Choose Procedure --</option>
+          {% for p in procedures %}
+            <option value="{{ p.id }}" {% if selected_procedure == p.id %}selected{% endif %}>{{ p.name }} ({{ p.category }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold text-muted mb-1">Filter by City (Optional)</label>
+        <select name="city" class="form-select">
+          <option value="">All Cities</option>
+          {% for c in cities %}
+            <option value="{{ c }}" {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-arrow-left-right me-1"></i> Compare Prices</button>
+      </div>
+    </form>
+  </div>
+
+  {% if selected_procedure_obj %}
+    <!-- Chart and Table Section -->
+    <div class="mb-4">
+      <div class="card border-0 bg-white shadow-sm p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0">
+            <i class="bi bi-bar-chart-fill text-teal me-2"></i>Price Comparison Chart: {{ selected_procedure_obj.name }}
+          </h5>
+          <span class="text-muted small">Sample prices for demo</span>
+        </div>
+        <div style="position: relative; height: 320px;">
+          <canvas id="priceComparisonChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Price Table -->
+      <div class="card border-0 bg-white shadow-sm">
+        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+          <h5 class="fw-bold mb-0">
+            <i class="bi bi-table text-teal me-2"></i>Hospitals Offering {{ selected_procedure_obj.name }}
+          </h5>
+          <span class="badge bg-success-subtle text-success border border-success-subtle">
+            Sorted by Lowest Minimum Price
+          </span>
+        </div>
+        <div class="card-body p-0">
+          {% if results %}
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Rank</th>
+                    <th>Hospital</th>
+                    <th>City</th>
+                    <th>Minimum Price</th>
+                    <th>Maximum Price</th>
+                    <th>Price Estimate</th>
+                    <th class="text-end">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for hp in results %}
+                    <tr class="{% if loop.first %}table-cheapest{% endif %}">
+                      <td>
+                        {% if loop.first %}
+                          <span class="badge bg-success"><i class="bi bi-trophy-fill me-1"></i>Lowest Price</span>
+                        {% else %}
+                          <span class="badge bg-light text-dark border">#{{ loop.index }}</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <strong>{{ hp.hospital.name }}</strong>
+                        <div class="text-muted small">{{ hp.hospital.phone or 'Verified Hospital' }}</div>
+                      </td>
+                      <td><span class="badge bg-light text-dark border">{{ hp.hospital.city }}</span></td>
+                      <td class="fw-bold text-success">₹{{ "{:,}".format(hp.price_min) }}</td>
+                      <td class="fw-bold text-dark">₹{{ "{:,}".format(hp.price_max) }}</td>
+                      <td>
+                        <span class="text-muted small">Sample prices for demo</span>
+                      </td>
+                      <td class="text-end">
+                        {% if current_user.is_authenticated and current_user.role == 'patient' %}
+                          <a href="{{ url_for('patient.book_appointment', hospital_id=hp.hospital_id, procedure=hp.procedure_id) }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-calendar-plus me-1"></i> Book
+                          </a>
+                        {% else %}
+                          <a href="{{ url_for('auth.login', next=url_for('patient.book_appointment', hospital_id=hp.hospital_id, procedure=hp.procedure_id)) }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-calendar-plus me-1"></i> Book
+                          </a>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="p-4 text-center text-muted">
+              No partner hospitals offering this procedure match the chosen city filter.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="card p-5 text-center bg-white border-0 shadow-sm">
+      <i class="bi bi-tags fs-1 text-teal mb-3"></i>
+      <h4 class="fw-bold">Select a Procedure to Compare</h4>
+      <p class="text-muted col-md-6 mx-auto">Choose an eye procedure above (e.g., Cataract Surgery, Retinal Laser, Anti-VEGF Injection, or LASIK) to compare price ranges side by side across top eye care hospitals.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if selected_procedure_obj and results %}
+<script>
+  const ctx = document.getElementById('priceComparisonChart').getContext('2d');
+  
+  const labels = [
+    {% for hp in results %}
+      "{{ hp.hospital.name }} ({{ hp.hospital.city }})",
+    {% endfor %}
+  ];
+
+  const minPrices = [
+    {% for hp in results %}
+      {{ hp.price_min }},
+    {% endfor %}
+  ];
+
+  const maxPrices = [
+    {% for hp in results %}
+      {{ hp.price_max }},
+    {% endfor %}
+  ];
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Min Price (₹)',
+          data: minPrices,
+          backgroundColor: '#0d9488',
+          borderRadius: 4
+        },
+        {
+          label: 'Max Price (₹)',
+          data: maxPrices,
+          backgroundColor: '#0284c7',
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return '₹' + value.toLocaleString();
+            }
+          }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return context.dataset.label + ': ₹' + context.raw.toLocaleString();
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}

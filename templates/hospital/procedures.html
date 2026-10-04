@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Manage Procedures & Prices - {{ hospital.name }} - EyeCare AI{% endblock %}
+{% block content %}
+<div class="container py-2">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="bi bi-list-check text-teal me-2"></i>Manage Hospital Procedures & Pricing</h2>
+      <p class="text-muted small mb-0">{{ hospital.name }} &bull; Configure surgical and diagnostic service offerings</p>
+    </div>
+    <span class="badge bg-light text-secondary border px-3 py-2">Sample prices for demo</span>
+  </div>
+
+  {% if disabled %}
+    <div class="card p-5 text-center bg-white border-warning shadow-sm mb-4">
+      <div class="text-warning mb-3">
+        <i class="bi bi-shield-lock-fill display-3"></i>
+      </div>
+      <h4 class="fw-bold text-dark">Procedure Management Locked</h4>
+      <p class="text-muted col-md-8 mx-auto">
+        Your hospital account is currently awaiting administrator review and approval. Once verified by an admin, you will be able to add clinical procedures, update estimated price ranges, and receive patient bookings.
+      </p>
+      <div>
+        <a href="{{ url_for('hospital.dashboard') }}" class="btn btn-outline-primary">Return to Portal</a>
+      </div>
+    </div>
+  {% else %}
+    <!-- Add Procedure Form Card -->
+    {% if all_master_procedures %}
+      <div class="card border-0 shadow-sm bg-white p-4 mb-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-plus-circle text-teal me-2"></i>Add Procedure to Hospital Catalog</h5>
+        <form method="POST" action="{{ url_for('hospital.procedures') }}" class="row g-3">
+          <input type="hidden" name="action" value="add">
+          
+          <div class="col-md-5">
+            <label class="form-label small fw-semibold text-muted">Select Clinical Procedure *</label>
+            <select name="procedure_id" class="form-select" required>
+              <option value="">-- Choose Procedure --</option>
+              {% for p in all_master_procedures %}
+                <option value="{{ p.id }}">{{ p.name }} ({{ p.category }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">Minimum Price (₹ INR) *</label>
+            <input type="number" name="price_min" class="form-control" placeholder="15000" min="0" step="500" required>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">Maximum Price (₹ INR) *</label>
+            <input type="number" name="price_max" class="form-control" placeholder="45000" min="0" step="500" required>
+          </div>
+
+          <div class="col-md-1 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check-lg"></i> Add</button>
+          </div>
+          <div class="col-12 text-muted small">
+            Note: All prices are treated as sample prices for demo purposes in this capstone platform.
+          </div>
+        </form>
+      </div>
+    {% endif %}
+
+    <!-- Existing Procedures Table -->
+    <div class="card border-0 shadow-sm bg-white">
+      <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0"><i class="bi bi-table text-teal me-2"></i>Active Procedure Offerings ({{ procedures|length }})</h5>
+        <span class="text-muted small">Sample prices for demo</span>
+      </div>
+      <div class="card-body p-0">
+        {% if procedures %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Procedure Name</th>
+                  <th>Category</th>
+                  <th>Min Price (₹)</th>
+                  <th>Max Price (₹)</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for hp in procedures %}
+                  <tr>
+                    <td class="fw-semibold">{{ hp.procedure.name }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ hp.procedure.category }}</span></td>
+                    <td>
+                      <form method="POST" action="{{ url_for('hospital.procedures') }}" class="d-inline-flex align-items-center gap-1">
+                        <input type="hidden" name="action" value="add">
+                        <input type="hidden" name="procedure_id" value="{{ hp.procedure_id }}">
+                        <span class="fw-bold text-success">₹</span>
+                        <input type="number" name="price_min" value="{{ hp.price_min }}" class="form-control form-control-sm" style="width: 100px;" required>
+                    </td>
+                    <td>
+                        <span class="fw-bold text-dark">₹</span>
+                        <input type="number" name="price_max" value="{{ hp.price_max }}" class="form-control form-control-sm" style="width: 100px;" required>
+                    </td>
+                    <td class="text-end">
+                        <button type="submit" class="btn btn-sm btn-outline-primary me-1" title="Update Price"><i class="bi bi-arrow-repeat"></i> Update</button>
+                      </form>
+                      <form method="POST" action="{{ url_for('hospital.procedures') }}" class="d-inline" onsubmit="return confirm('Remove {{ hp.procedure.name }} from your offerings?');">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="hospital_procedure_id" value="{{ hp.id }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Procedure"><i class="bi bi-trash"></i></button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="p-5 text-center text-muted">
+            <i class="bi bi-clipboard2-pulse fs-1 text-secondary mb-2 d-block"></i>
+            <h6 class="fw-bold">No procedures catalogued yet</h6>
+            <p class="small text-muted mb-0">Use the form above to add procedures and define estimated price ranges.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
