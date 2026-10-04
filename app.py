@@ -56,12 +56,15 @@ def create_app(config_class=Config):
         flash("File is too large. Maximum allowed size is 5 MB.", "danger")
         return redirect(request.referrer or "/")
 
+    # Ensure database schema is created
+    with app.app_context():
+        db.create_all()
+
     return app
 
 
 app = create_app()
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True, host="127.0.0.1", port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)
