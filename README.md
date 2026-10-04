@@ -1,35 +1,85 @@
-# EyeCare AI &bull; Retinal Screening & Hospital Care Platform
+# EyeCare AI &bull; Intelligent Retinal Screening & Ophthalmology Platform
 
-EyeCare AI is a full-stack web platform designed to assist patients in preliminary Diabetic Retinopathy (DR) screening using deep learning explainability (Grad-CAM heatmaps), transparently compare eye procedure prices across specialized hospitals, and schedule clinical consultations.
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Backend-Flask%203.1-teal.svg)](https://flask.palletsprojects.com/)
+[![TensorFlow](https://img.shields.io/badge/ML-TensorFlow%20%2F%20Keras-orange.svg)](https://www.tensorflow.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> **Medical Disclaimer:**
-> *This is an AI screening aid, not a medical diagnosis. Please consult a qualified ophthalmologist.*
+**EyeCare AI** is a full-stack medical web platform designed to assist in early **Diabetic Retinopathy (DR)** screening using deep learning explainability (**Grad-CAM heatmaps** on EfficientNet-B0), transparently compare eye procedure prices across specialized ophthalmology hospitals, and schedule clinical consultations with attached diagnostic reports.
+
+> **Important Medical Disclaimer:**  
+> *This platform is an AI screening aid and decision-support tool, not a medical diagnosis. Clinical intervention decisions must always be made by a qualified ophthalmologist.*
+
+---
+
+## Key Features
+
+1. **AI Retinal Screening (EfficientNet-B0):**
+   - Upload digital fundus photography (`.png`, `.jpg`, `.jpeg`).
+   - Standardized clinical preprocessing: black border cropping, bilinear resize (256&times;256), and **CLAHE** (Contrast Limited Adaptive Histogram Equalization) on the L channel in LAB color space.
+   - Categorizes retinal severity across the **5 ICDR DR Grades** (Grade 0: No DR to Grade 4: Proliferative DR) with model confidence and class probability distribution.
+
+2. **Explainable AI (Grad-CAM on `top_conv`):**
+   - Visual gradient-weighted class activation mapping highlights exactly where the neural network detected microvascular lesions (microaneurysms, hemorrhages, hard exudates).
+   - Generates visual JET colormap overlays, fostering clinical interpretability and trust.
+
+3. **Transparent Procedure Price Comparison:**
+   - Real-time comparative pricing for key eye procedures: **Cataract Surgery (IOL)**, **LASIK**, **Retinal Laser Photocoagulation**, **Anti-VEGF Injections**, **Vitrectomy**, and **Cornea Transplants**.
+   - Filters by city (Bengaluru, Chennai, Hyderabad, Mumbai) and procedure.
+   - Highlights the lowest-cost facility and displays an interactive **Chart.js** price distribution bar chart.
+
+4. **Hospital Directory & Admin Verification:**
+   - Search verified partner eye hospitals.
+   - Complete hospital onboarding governance: unapproved hospital registrations remain locked and hidden from public search until verified by the system administrator.
+
+5. **Integrated Consultation Scheduling:**
+   - Patients schedule appointments with specialized hospitals.
+   - Option to attach previous retinal AI scans for ophthalmologist pre-review.
+   - Enforces server-side future-date scheduling and cancellation guards (only pending appointments can be cancelled).
+
+6. **Downloadable Clinical PDF Reports:**
+   - One-click print-ready diagnostic PDF reports generated with **ReportLab**.
+   - Contains patient history, original fundus photography, Grad-CAM heatmap overlay, severity grade, confidence score, clinical action advice, and medical disclaimer.
+
+7. **Multi-Role Access Control (RBAC):**
+   - Dedicated portals for **Patients**, **Hospitals**, and **Administrators** with strict security isolation (patients can only see their own scans; hospitals can only view scans attached to their appointments).
 
 ---
 
 ## Tech Stack
-- **Backend:** Python 3.10+ (Flask, Flask-SQLAlchemy, Flask-Login, Werkzeug)
-- **Database:** SQLite (`eyecare.db`)
-- **Frontend:** Jinja2 templates, Bootstrap 5 (CDN), Chart.js (CDN), Bootstrap Icons
-- **Image Processing & ML:** OpenCV, NumPy, Pillow, Lazy-loaded Keras/EfficientNet-B0 fallback
-- **Reports:** ReportLab (clinical PDF generation)
+
+| Layer | Technologies Used |
+|---|---|
+| **Backend Framework** | Python 3.10+, Flask 3.1, Jinja2 |
+| **Database & ORM** | SQLite (`eyecare.db`), SQLAlchemy 2.1, Flask-SQLAlchemy |
+| **Authentication & RBAC** | Flask-Login, Werkzeug (salted password hashing) |
+| **AI / Machine Learning** | TensorFlow / Keras 3.x (`EfficientNet-B0`), `tf.GradientTape` |
+| **Computer Vision** | OpenCV (`cv2`), NumPy, Pillow |
+| **Document Generation** | ReportLab 5.0 (clinical PDF engine) |
+| **Frontend UI** | Bootstrap 5 (CDN), Chart.js (CDN), Bootstrap Icons |
 
 ---
 
 ## Quick Start Guide
 
-### 1. Install Dependencies
+### 1. Clone the Repository
+```bash
+git clone https://github.com/Varun00752/EyeCare-AI.git
+cd EyeCare-AI
+```
+
+### 2. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Seed Sample Database
-Populates the administrator account, 6 pre-approved partner hospitals in Bengaluru, Chennai, Hyderabad, and Mumbai with varied sample procedure price ranges, and a sample patient:
+### 3. Initialize & Seed the Database
+Populates default procedures, administrator credentials, sample patient, and pre-approved partner eye hospitals with realistic procedure price ranges:
 ```bash
 python seed.py
 ```
 
-### 3. Start the Web Server
+### 4. Start the Application
 ```bash
 python app.py
 ```
@@ -37,44 +87,77 @@ Open your browser and navigate to: **[http://127.0.0.1:5000](http://127.0.0.1:50
 
 ---
 
-## Test Login Accounts
+## Demo Login Accounts
 
-| Role | Email | Password | Access & Permissions |
+| Role | Email Address | Password | Features & Portal Access |
 |---|---|---|---|
-| **Admin** | `admin@eyecare.com` | `Admin@123` | Hospital approvals/rejections, master procedures catalog management, system stats dashboard |
-| **Patient** | `patient@eyecare.com` | `Patient@123` | Upload retinal scans, view Grad-CAM heatmaps, download PDF reports, book & cancel appointments |
-| **Hospital** | `hospital1@eyecare.com` | `Hospital@123` | Nethra Institute: Manage procedures & price ranges, review patient appointments, view attached retinal scans |
-| **Hospital 2** | `hospital2@eyecare.com` | `Hospital@123` | Shankara Vision Hospital |
+| **Admin** | `admin@eyecare.com` | `Admin@123` | Hospital verification (Approve/Reject), master procedure catalog, disease stats |
+| **Patient** | `patient@eyecare.com` | `Patient@123` | Upload retinal scans, view Grad-CAM heatmaps, download PDF, book appointments |
+| **Hospital 1** | `hospital1@eyecare.com` | `Hospital@123` | Nethra Institute (Bengaluru) &ndash; manage procedures/prices, review bookings |
+| **Hospital 2** | `hospital2@eyecare.com` | `Hospital@123` | Shankara Vision Hospital (Bengaluru) |
 | **Hospital 3** | `hospital3@eyecare.com` | `Hospital@123` | Dr. Mohan Retinal Eye Foundation (Chennai) |
-| **Hospital 4** | `hospital4@eyecare.com` | `Hospital@123` | Prasad Eye Institute (Hyderabad) |
+| **Hospital 4** | `hospital4@eyecare.com` | `Hospital@123` | Prasad Eye Institute & Laser Center (Hyderabad) |
 | **Hospital 5** | `hospital5@eyecare.com` | `Hospital@123` | Bombay City Eye & Retina Clinic (Mumbai) |
 | **Hospital 6** | `hospital6@eyecare.com` | `Hospital@123` | Metro Retina & Cornea Hospital (Mumbai) |
 
 ---
 
-## Key Features Implemented (Tasks 1 to 9)
+## Diabetic Retinopathy Severity Scale (ICDR)
 
-1. **Task 1 - Project Setup:** Modular Flask architecture, application factory pattern, environment-configurable secret key with dev fallback, responsive medical layout in `base.html` with role-aware navigation.
-2. **Task 2 - Database Models & Seed Data:** Complete schema for Users, Patients, Hospitals, Master Procedures, HospitalProcedure price ranges, Scans, and Appointments.
-3. **Task 3 - Authentication & Role Isolation:** Passwords hashed with `werkzeug.security`. Secure `@role_required` decorator enforcing role isolation; 403 pages returned for cross-role violations.
-4. **Task 4 - Public Hospital Directory & Price Comparison:** Filter hospitals by city and procedure. `/compare` displays comparative pricing with cheapest hospital highlighted and interactive Chart.js bar charts. Only approved hospitals appear.
-5. **Task 5 - ML Module & DEMO MODE Fallback:** `ml/predict.py` implements image validation (checks format, min 100x100px, low-illumination warning), black border cropping, CLAHE enhancement, and simulated Grad-CAM attention heatmaps in DEMO MODE with prominent banners.
-6. **Task 6 - Retinal Scan Upload & Grading:** Drag-and-drop upload with client & server-side validation (formats, 5MB limit). Results display original retinal image alongside Grad-CAM heatmap, severity grade (0-4), confidence bar, class probabilities, clinical advice, and recommended hospitals for grade >= 2.
-7. **Task 7 - Consultation Scheduling & Appointments:** Server-side future-date validation. Hospitals can only view scans attached to their appointments. Pending appointments can be cancelled by patients or accepted/rejected by hospitals.
-8. **Task 8 - Hospital & Admin Management Portals:** Unapproved hospitals are locked from adding/editing procedures and hidden from public search until approved by the admin. Admin can approve/reject partner hospitals and manage the master procedure catalog.
-9. **Task 9 - Clinical PDF Reports:** Downloadable PDF report generated with ReportLab featuring patient metadata, original fundus image, Grad-CAM heatmap overlay, DR grade, confidence score, clinical action text, and mandatory medical disclaimer.
+| Grade | Severity Level | Pathological Findings | Clinical Recommendation |
+|:---:|---|---|---|
+| **0** | **No DR** | Normal retina, no microvascular lesions | Annual routine re-screening in 12 months |
+| **1** | **Mild NPDR** | Microaneurysms only | Blood sugar control; re-screen in 6&ndash;12 months |
+| **2** | **Moderate NPDR** | Multiple microaneurysms, blot hemorrhages, hard exudates | Consult ophthalmologist within 1&ndash;3 months |
+| **3** | **Severe NPDR** | >20 intraretinal hemorrhages in 4 quadrants, venous beading | Urgent specialist consultation required |
+| **4** | **Proliferative DR** | Neovascularization, vitreous/preretinal hemorrhage | Immediate specialist care (Laser / Anti-VEGF) |
 
 ---
 
-## API Endpoints (`/api`)
+## REST API Endpoints (`/api`)
 
-- `POST /api/predict`: Multipart image upload (logged-in patient only) &rarr; returns `{grade, label, confidence, heatmap_url, demo}`.
-- `GET /api/hospitals?city=&procedure=`: Returns JSON list of approved hospitals and procedure price ranges.
-- `GET /api/stats`: Admin-only metrics and DR grade distribution for charting.
+- **`POST /api/predict`**: Multipart image upload (logged-in patient only). Returns predicted grade, label, confidence, and Grad-CAM heatmap URL.
+- **`GET /api/hospitals?city=&procedure=`**: Returns JSON list of approved hospitals, contact info, and procedure price ranges.
+- **`GET /api/stats`**: Admin-only system metrics, user counts, and DR grade distribution for analytics.
 
 ---
 
-## Documented Assumptions (per AGENTS.md)
-1. **DEMO MODE:** When `ml/dr_model.keras` is absent, the system operates in DEMO MODE. Predictions are simulated based on image statistics, generating consistent grades and realistic Grad-CAM heatmaps.
-2. **Sample Prices:** All hospital procedure prices in the database are simulated INR estimates labeled "Sample prices for demo" throughout the UI.
-3. **Privacy:** Data isolation ensures patients only see their own scans; hospitals can only view scans explicitly attached to an appointment booked with their hospital.
+## Project Structure
+
+```text
+EyeCare-AI/
+├── app.py                 # Flask application factory & error handlers
+├── config.py              # Configuration & environment variables
+├── models.py              # SQLAlchemy database models & RBAC schema
+├── seed.py                # Database population script
+├── requirements.txt       # Project dependencies
+├── README.md              # Project documentation
+│
+├── ml/                    # Machine Learning Module
+│   ├── dr_model.keras     # Trained EfficientNet-B0 model
+│   └── predict.py         # CLAHE preprocessing, inference & Grad-CAM
+│
+├── routes/                # Blueprint Route Controllers
+│   ├── auth.py            # Authentication, registration & role decorators
+│   ├── main.py            # Public landing, hospital directory & price comparison
+│   ├── patient.py         # Patient dashboard, scan upload & booking
+│   ├── hospital.py        # Hospital portal, procedures & appointment review
+│   ├── admin.py           # Admin console & hospital approvals
+│   ├── api.py             # REST API endpoints
+│   └── patient_pdf.py     # ReportLab clinical PDF generator
+│
+├── templates/             # Jinja2 HTML Templates
+│   ├── base.html          # Global layout, responsive navbar & medical footer
+│   ├── index.html         # Homepage hero & feature cards
+│   ├── hospitals.html     # Directory & search filters
+│   ├── compare.html       # Price comparison & Chart.js chart
+│   ├── patient/           # Patient portal pages
+│   ├── hospital/          # Hospital management pages
+│   └── admin/             # Admin console pages
+│
+└── static/                # Static Media & Storage
+    ├── css/style.css      # Custom medical color theme
+    ├── uploads/           # Uploaded fundus scans
+    ├── heatmaps/          # Generated Grad-CAM attention heatmaps
+    └── reports/           # Generated PDF reports
+```
