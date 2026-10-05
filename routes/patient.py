@@ -70,7 +70,7 @@ def scan_new():
             # Clean up uploaded file if invalid image
             if os.path.exists(save_path):
                 os.remove(save_path)
-            flash(f"Image validation failed: {str(e)}", "danger")
+            flash(str(e), "danger")
             return redirect(request.url)
         except Exception as e:
             if os.path.exists(save_path):

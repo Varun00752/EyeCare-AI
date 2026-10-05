@@ -49,10 +49,52 @@ def is_demo_mode():
     return load_model_once() is None
 
 
+def is_fundus_photo(img):
+    """
+    Check if the image resembles a retinal fundus photograph:
+    Requires a dark/black border surrounding a circular orange-red region.
+    """
+    h, w = img.shape[:2]
+    # Check corners for dark border
+    m = max(5, min(h, w) // 10)
+    tl = np.mean(img[:m, :m])
+    tr = np.mean(img[:m, -m:])
+    bl = np.mean(img[-m:, :m])
+    br = np.mean(img[-m:, -m:])
+    corner_mean = (tl + tr + bl + br) / 4.0
+
+    # Check center region for circular orange-red characteristics
+    ch_start, ch_end = h // 4, 3 * h // 4
+    cw_start, cw_end = w // 4, 3 * w // 4
+    center = img[ch_start:ch_end, cw_start:cw_end]
+
+    b_mean = np.mean(center[:, :, 0])
+    g_mean = np.mean(center[:, :, 1])
+    r_mean = np.mean(center[:, :, 2])
+    center_mean = np.mean(center)
+
+    # 1. Red dominance & minimum illumination in center
+    is_red_dominant = (r_mean > 50) and (r_mean > b_mean * 1.25) and (r_mean > g_mean * 0.95)
+
+    # 2. Dark border surrounding the circular region
+    has_dark_border = (corner_mean < 55) or (center_mean > corner_mean * 1.6 and corner_mean < 90)
+
+    # 3. Reddish-orange hue percentage in HSV
+    hsv_center = cv2.cvtColor(center, cv2.COLOR_BGR2HSV)
+    hue = hsv_center[:, :, 0]
+    sat = hsv_center[:, :, 1]
+    val = hsv_center[:, :, 2]
+    red_orange_mask = ((hue <= 28) | (hue >= 160)) & (sat >= 25) & (val >= 35)
+    red_orange_fraction = np.mean(red_orange_mask)
+
+    return bool(is_red_dominant and has_dark_border and (red_orange_fraction >= 0.40))
+
+
 def validate_image(path):
     """
-    Validate input image format, readable status, and dimensions.
+    Validate input image format, readable status, dimensions, and fundus characteristics.
     Returns (cv2_image, warning_message).
+    Raises ValueError if not a valid image or does not look like a fundus photograph.
     """
     if not os.path.exists(path):
         raise ValueError("Image file not found.")
@@ -65,15 +107,11 @@ def validate_image(path):
     if h < 100 or w < 100:
         raise ValueError(f"Image too small ({w}x{h}). Minimum size required is 100x100 pixels.")
 
-    # Warn if image doesn't appear to be a fundus photo (fundus typically has strong red/orange dominance)
-    warning = None
-    r_mean = np.mean(img[:, :, 2])
-    g_mean = np.mean(img[:, :, 1])
-    b_mean = np.mean(img[:, :, 0])
-    if r_mean < 35 or (r_mean < g_mean and r_mean < b_mean):
-        warning = "The uploaded image has low retinal illumination or does not look like a typical fundus photograph. Results may be inaccurate."
+    # Fundus check: dark border around circular orange-red region
+    if not is_fundus_photo(img):
+        raise ValueError("This does not look like a retinal image. Please upload a fundus photograph.")
 
-    return img, warning
+    return img, None
 
 
 def crop_black_borders(img, tol=10):
