@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <defs>
+    <!-- Primary Gradient -->
+    <linearGradient id="eyeGrad" x1="4" y1="4" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0d9488"/>
+      <stop offset="50%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+
+    <!-- Pupil Radial Glow -->
+    <radialGradient id="pupilGlow" cx="32" cy="32" r="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="60%" stop-color="#0d9488"/>
+      <stop offset="100%" stop-color="#042f2e"/>
+    </radialGradient>
+
+    <!-- Outer Glow -->
+    <filter id="glowFilter" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0d9488" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background Shield/Rounded Icon Container -->
+  <rect width="64" height="64" rx="16" fill="url(#eyeGrad)"/>
+
+  <!-- Subtle Inner Border Highlight -->
+  <rect x="1" y="1" width="62" height="62" rx="15" stroke="white" stroke-opacity="0.25" stroke-width="1.5"/>
+
+  <!-- Outer Stylized Retinal Sclera/Eye Outline -->
+  <path d="M12 32C17 21 24 16 32 16C40 16 47 21 52 32C47 43 40 48 32 48C24 48 17 43 12 32Z" 
+        stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.95"/>
+
+  <!-- Scanning Retinal Grid Ring -->
+  <circle cx="32" cy="32" r="11" stroke="#ffffff" stroke-width="1.8" stroke-dasharray="3 2" opacity="0.75"/>
+
+  <!-- Inner Iris with Radial Gradient -->
+  <circle cx="32" cy="32" r="7.5" fill="url(#pupilGlow)"/>
+
+  <!-- Lens Center Light Reflection -->
+  <circle cx="30" cy="30" r="2.2" fill="#ffffff"/>
+  <circle cx="34.5" cy="34" r="1" fill="#ffffff" opacity="0.8"/>
+
+  <!-- AI Crosshair / Diagnostic Marks -->
+  <path d="M32 12V15M32 49V52M12 32H9M55 32H52" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+</svg>

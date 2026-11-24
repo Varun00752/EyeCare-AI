@@ -141,24 +141,35 @@
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom">
           <div>
             <h5 class="fw-bold mb-1">
-              <i class="bi bi-bar-chart-fill text-teal me-2"></i>{{ selected_procedure_obj.name }} — Hospital Price Comparison
+              <i class="bi bi-bar-chart-fill text-teal me-2"></i>{{ selected_procedure_obj.name }} &mdash; Hospital Price Comparison
             </h5>
             <p class="text-muted small mb-0">
-              Clear side-by-side comparison. Hospital names are positioned horizontally for effortless readability.
+              Comparing Minimum Starting Price and Maximum Rate. Hospital names are straight, clean, and unslanted.
             </p>
           </div>
-          <div class="d-flex align-items-center gap-3 mt-2 mt-sm-0">
-            <span class="badge badge-teal"><i class="bi bi-check2-circle me-1"></i>{{ results|length }} Centers Listed</span>
+          
+          <!-- View Toggle: Column vs Horizontal -->
+          <div class="d-flex align-items-center gap-2 mt-2 mt-sm-0">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Chart Orientation">
+              <button type="button" class="btn btn-outline-primary active" id="btnColumnChart">
+                <i class="bi bi-bar-chart-fill me-1"></i> Columns
+              </button>
+              <button type="button" class="btn btn-outline-primary" id="btnHorizontalChart">
+                <i class="bi bi-distribute-horizontal me-1"></i> Horizontal
+              </button>
+            </div>
+            <span class="badge badge-teal ms-1"><i class="bi bi-check2-circle me-1"></i>{{ results|length }} Centers</span>
           </div>
         </div>
 
-        <!-- Dynamic Chart Wrapper: Height automatically set by JS based on number of hospitals -->
-        <div id="chartContainerWrapper" class="chart-wrapper">
+        <!-- Responsive Chart Canvas with generous breathing room (Never Chopped!) -->
+        <div id="chartContainerWrapper" class="w-100" style="position: relative; height: 380px; min-height: 340px;">
           <canvas id="priceComparisonChart"></canvas>
         </div>
+
         <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top text-muted small">
-          <div><i class="bi bi-info-circle me-1"></i> Click on legend items above to toggle Minimum or Maximum price bars.</div>
-          <div>All figures in Indian Rupees (₹)</div>
+          <div><i class="bi bi-info-circle me-1"></i> Click legend items above to toggle Minimum or Maximum bars.</div>
+          <div>All figures in Indian Rupees (₹ INR)</div>
         </div>
       </div>
 
@@ -282,189 +293,227 @@ document.addEventListener("DOMContentLoaded", function() {
   const chartCanvas = document.getElementById('priceComparisonChart');
   if (!chartCanvas) return;
 
-  const rawLabels = [
-    {% for hp in results %}
-      "{{ hp.hospital.name }}",
-    {% endfor %}
-  ];
+  // Raw hospital data (properly JSON-encoded to prevent HTML entity escaping like &amp;)
+  const rawHospitalNames = {{ results|map(attribute='hospital.name')|list|tojson }};
+  const cities = {{ results|map(attribute='hospital.city')|list|tojson }};
+  const minPrices = {{ results|map(attribute='price_min')|list|tojson }};
+  const maxPrices = {{ results|map(attribute='price_max')|list|tojson }};
 
-  const cities = [
-    {% for hp in results %}
-      "{{ hp.hospital.city }}",
-    {% endfor %}
-  ];
-
-  const minPrices = [
-    {% for hp in results %}
-      {{ hp.price_min }},
-    {% endfor %}
-  ];
-
-  const maxPrices = [
-    {% for hp in results %}
-      {{ hp.price_max }},
-    {% endfor %}
-  ];
-
-  // Format labels as multi-line arrays [Hospital Name, '📍 City']
-  // This guarantees labels sit HORIZONTALLY on the Y-axis without any slanting!
-  const formattedLabels = rawLabels.map((name, idx) => {
-    return [name, '📍 ' + cities[idx]];
+  // Create clean, readable labels: [Short Name, "📍 City"]
+  // By splitting into 2 short lines, labels remain 100% horizontal without slanting!
+  const formattedLabels = rawHospitalNames.map((name, i) => {
+    // Shorten overly verbose institutional names for crisp axis display
+    let shortName = name
+      .replace("Institute of Vitreo-Retina & Eye Care", "Eye Care")
+      .replace("Institute & Laser Center", "Institute")
+      .replace("Retinal Eye Foundation", "Eye Foundation")
+      .replace("City Eye & Retina Clinic", "City Eye Clinic")
+      .replace("Retina & Cornea Hospital", "Eye Hospital");
+    return [shortName, '📍 ' + cities[i]];
   });
 
-  // Dynamically calculate responsive height based on number of items
-  // Solves the problem where the graph looks "small sometimes and big sometimes"
-  const rowHeight = 65; // Balanced comfortable row height
-  const basePadding = 90; // Header & legend room
-  const dynamicHeight = Math.max(280, Math.min(800, (formattedLabels.length * rowHeight) + basePadding));
-  
-  const container = document.getElementById('chartContainerWrapper');
-  if (container) {
-    container.style.height = dynamicHeight + 'px';
-  }
+  let currentOrientation = 'x'; // Default: Vertical Columns ('x'), 'y' for Horizontal Bars
+  let priceChart = null;
 
-  const ctx = chartCanvas.getContext('2d');
+  function buildChart(orientation) {
+    if (priceChart) {
+      priceChart.destroy();
+    }
 
-  // Create subtle gradient fills for modern aesthetic
-  const tealGradient = ctx.createLinearGradient(0, 0, 400, 0);
-  tealGradient.addColorStop(0, '#0d9488');
-  tealGradient.addColorStop(1, '#14b8a6');
+    const container = document.getElementById('chartContainerWrapper');
+    if (orientation === 'y') {
+      // Horizontal mode: dynamic height based on number of hospitals
+      const dynHeight = Math.max(300, (formattedLabels.length * 62) + 80);
+      container.style.height = dynHeight + 'px';
+    } else {
+      // Vertical Column mode: stable, spacious 380px height (never chopped!)
+      container.style.height = '380px';
+    }
 
-  const blueGradient = ctx.createLinearGradient(0, 0, 400, 0);
-  blueGradient.addColorStop(0, '#0284c7');
-  blueGradient.addColorStop(1, '#38bdf8');
+    const isHorizontal = (orientation === 'y');
 
-  new Chart(ctx, {
-    type: 'bar',
-    // KEY FIX: indexAxis 'y' turns this into a horizontal bar chart
-    // Hospital names sit on the Y-axis and are 100% HORIZONTAL (never slanted!)
-    indexAxis: 'y',
-    data: {
-      labels: formattedLabels,
-      datasets: [
-        {
-          label: 'Minimum Starting Price',
-          data: minPrices,
-          backgroundColor: tealGradient,
-          borderColor: '#0f766e',
-          borderWidth: 1,
-          borderRadius: 6,
-          borderSkipped: false,
-          maxBarThickness: 22,
-          barPercentage: 0.82,
-          categoryPercentage: 0.85
-        },
-        {
-          label: 'Maximum Estimated Rate',
-          data: maxPrices,
-          backgroundColor: blueGradient,
-          borderColor: '#0369a1',
-          borderWidth: 1,
-          borderRadius: 6,
-          borderSkipped: false,
-          maxBarThickness: 22,
-          barPercentage: 0.82,
-          categoryPercentage: 0.85
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      layout: {
-        padding: {
-          left: 10,
-          right: 25,
-          top: 10,
-          bottom: 10
-        }
-      },
-      scales: {
-        x: {
-          beginAtZero: true,
-          grid: {
-            color: '#f1f5f9',
-            drawBorder: false
+    priceChart = new Chart(chartCanvas, {
+      type: 'bar',
+      indexAxis: orientation,
+      data: {
+        labels: formattedLabels,
+        datasets: [
+          {
+            label: 'Min Starting Price',
+            data: minPrices,
+            backgroundColor: '#0d9488',
+            hoverBackgroundColor: '#0f766e',
+            borderColor: '#0d9488',
+            borderWidth: 1,
+            borderRadius: isHorizontal ? 6 : { topLeft: 6, topRight: 6 },
+            maxBarThickness: isHorizontal ? 22 : 36,
+            barPercentage: 0.82,
+            categoryPercentage: 0.76
           },
-          ticks: {
-            color: '#64748b',
-            font: {
-              size: 11,
-              weight: '500'
+          {
+            label: 'Max Estimated Rate',
+            data: maxPrices,
+            backgroundColor: '#0284c7',
+            hoverBackgroundColor: '#0369a1',
+            borderColor: '#0284c7',
+            borderWidth: 1,
+            borderRadius: isHorizontal ? 6 : { topLeft: 6, topRight: 6 },
+            maxBarThickness: isHorizontal ? 22 : 36,
+            barPercentage: 0.82,
+            categoryPercentage: 0.76
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: {
+            top: 15,
+            bottom: 10,
+            left: 10,
+            right: 15
+          }
+        },
+        scales: {
+          x: {
+            // In Column mode (orientation 'x'), X is the hospital axis
+            // In Horizontal mode (orientation 'y'), X is the price axis
+            type: isHorizontal ? 'linear' : 'category',
+            beginAtZero: true,
+            grid: {
+              color: isHorizontal ? '#f1f5f9' : 'transparent',
+              drawBorder: false
             },
-            callback: function(value) {
-              return '₹' + Number(value).toLocaleString('en-IN');
+            ticks: {
+              // KEY FIX: maxRotation: 0 & minRotation: 0 forces labels to stay 100% HORIZONTAL (NEVER SLANTED!)
+              maxRotation: 0,
+              minRotation: 0,
+              autoSkip: false,
+              color: '#334155',
+              font: {
+                size: 11,
+                weight: '600'
+              },
+              callback: function(value) {
+                if (isHorizontal) {
+                  // Format currency on X-axis for horizontal mode
+                  if (value >= 1000) return '₹' + (value / 1000).toLocaleString('en-IN') + 'k';
+                  return '₹' + Number(value).toLocaleString('en-IN');
+                }
+                // Return hospital label directly in column mode
+                return this.getLabelForValue(value);
+              }
+            },
+            title: {
+              display: isHorizontal,
+              text: 'Estimated Procedure Cost (₹ INR)',
+              color: '#64748b',
+              font: { size: 12, weight: '600' },
+              padding: { top: 6 }
             }
           },
-          title: {
-            display: true,
-            text: 'Estimated Procedure Cost (₹ INR)',
-            color: '#64748b',
-            font: {
-              size: 12,
-              weight: '600'
+          y: {
+            // In Column mode (orientation 'x'), Y is the price axis
+            // In Horizontal mode (orientation 'y'), Y is the hospital axis
+            type: isHorizontal ? 'category' : 'linear',
+            beginAtZero: true,
+            grid: {
+              color: isHorizontal ? 'transparent' : '#f1f5f9',
+              drawBorder: false
             },
-            padding: { top: 8 }
+            ticks: {
+              autoSkip: false,
+              color: '#334155',
+              font: {
+                size: 11,
+                weight: '600'
+              },
+              callback: function(value) {
+                if (!isHorizontal) {
+                  // Format currency on Y-axis for standard column mode
+                  if (value >= 1000) return '₹' + (value / 1000).toLocaleString('en-IN') + 'k';
+                  return '₹' + Number(value).toLocaleString('en-IN');
+                }
+                return this.getLabelForValue(value);
+              }
+            },
+            title: {
+              display: !isHorizontal,
+              text: 'Procedure Cost in Rupees (₹ INR)',
+              color: '#64748b',
+              font: { size: 12, weight: '600' },
+              padding: { bottom: 6 }
+            }
           }
         },
-        y: {
-          grid: {
-            display: false,
-            drawBorder: false
+        plugins: {
+          legend: {
+            position: 'top',
+            align: 'end',
+            labels: {
+              boxWidth: 14,
+              boxHeight: 14,
+              borderRadius: 3,
+              useBorderRadius: true,
+              color: '#1e293b',
+              font: {
+                size: 12,
+                weight: '600'
+              },
+              padding: 16
+            }
           },
-          ticks: {
-            // Guarantee labels are completely horizontal and legible
-            autoSkip: false,
-            color: '#0f172a',
-            font: {
-              size: 12,
-              weight: '600'
-            },
-            padding: 12
-          }
-        }
-      },
-      plugins: {
-        legend: {
-          position: 'top',
-          align: 'end',
-          labels: {
-            boxWidth: 14,
-            boxHeight: 14,
-            borderRadius: 3,
-            useBorderRadius: true,
-            color: '#334155',
-            font: {
-              size: 12,
-              weight: '600'
-            },
-            padding: 16
-          }
-        },
-        tooltip: {
-          backgroundColor: '#0f172a',
-          titleColor: '#ffffff',
-          bodyColor: '#e2e8f0',
-          borderColor: '#334155',
-          borderWidth: 1,
-          padding: 12,
-          cornerRadius: 8,
-          boxPadding: 6,
-          callbacks: {
-            title: function(items) {
-              if (!items.length) return '';
-              const idx = items[0].dataIndex;
-              return rawLabels[idx] + ' (' + cities[idx] + ')';
-            },
-            label: function(context) {
-              const val = context.raw || 0;
-              return ' ' + context.dataset.label + ': ₹' + Number(val).toLocaleString('en-IN');
+          tooltip: {
+            backgroundColor: '#0f172a',
+            titleColor: '#ffffff',
+            bodyColor: '#e2e8f0',
+            borderColor: '#334155',
+            borderWidth: 1,
+            padding: 12,
+            cornerRadius: 8,
+            boxPadding: 6,
+            callbacks: {
+              title: function(items) {
+                if (!items.length) return '';
+                const idx = items[0].dataIndex;
+                return rawHospitalNames[idx] + ' (' + cities[idx] + ')';
+              },
+              label: function(context) {
+                const val = context.raw || 0;
+                return ' ' + context.dataset.label + ': ₹' + Number(val).toLocaleString('en-IN');
+              }
             }
           }
         }
       }
-    }
-  });
+    });
+  }
+
+  // Initial render as Vertical Column Chart (standard, unslanted, prices on vertical Y-axis)
+  buildChart('x');
+
+  // Interactive View Toggle Handler
+  const btnCol = document.getElementById('btnColumnChart');
+  const btnHoriz = document.getElementById('btnHorizontalChart');
+
+  if (btnCol && btnHoriz) {
+    btnCol.addEventListener('click', function() {
+      if (currentOrientation === 'x') return;
+      currentOrientation = 'x';
+      btnCol.classList.add('active');
+      btnHoriz.classList.remove('active');
+      buildChart('x');
+    });
+
+    btnHoriz.addEventListener('click', function() {
+      if (currentOrientation === 'y') return;
+      currentOrientation = 'y';
+      btnHoriz.classList.add('active');
+      btnCol.classList.remove('active');
+      buildChart('y');
+    });
+  }
 });
 </script>
 {% endif %}
