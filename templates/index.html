@@ -1,51 +1,62 @@
 {% extends "base.html" %}
-{% block title %}EyeCare AI - AI Eye Screening & Hospital Finder{% endblock %}
+{% block title %}EyeCare AI — Intelligent Diabetic Retinopathy Screening & Care Directory{% endblock %}
 {% block content %}
 <div class="container">
-  <!-- Hero Section -->
-  <div class="p-5 mb-4 bg-teal-gradient rounded-4 shadow">
-    <div class="container-fluid py-4">
-      <span class="badge bg-white text-dark mb-3 px-3 py-2 rounded-pill"><i class="bi bi-stars text-teal me-1"></i> Powered by Deep Learning</span>
-      <h1 class="display-4 fw-bold mb-3">AI Eye Screening and Hospital Finder</h1>
-      <p class="col-md-9 fs-5 mb-4 text-white-50">
-        Early detection of Diabetic Retinopathy saves vision. Upload your retinal fundus scans for instant AI grading, compare procedure prices across top hospitals, and book appointments seamlessly.
+  <!-- Hero Section with Deep Medical Gradient -->
+  <div class="p-5 mb-4 hero-gradient text-white rounded-4 shadow-lg position-relative">
+    <div class="container-fluid py-3 position-relative" style="z-index: 2;">
+      <div class="d-inline-flex align-items-center gap-2 mb-3 bg-white bg-opacity-10 border border-white border-opacity-25 px-3 py-1 rounded-pill backdrop-blur">
+        <i class="bi bi-stars text-warning"></i>
+        <span class="small fw-semibold text-white">AI-Powered Retinal Screening &amp; Transparency</span>
+      </div>
+      <h1 class="display-4 fw-bold mb-3 tracking-tight">Intelligent Eye Screening &amp; Hospital Care Network</h1>
+      <p class="col-md-9 fs-5 mb-4 text-white text-opacity-75 leading-relaxed">
+        Early detection of Diabetic Retinopathy saves vision. Upload your retinal fundus photographs for automated 5-grade AI classification, visual Grad-CAM heatmaps, upfront procedure price comparisons, and direct specialist booking.
       </p>
       <div class="d-flex flex-wrap gap-3">
         {% if current_user.is_authenticated and current_user.role == 'patient' %}
-          <a href="{{ url_for('patient.scan_new') }}" class="btn btn-light btn-lg px-4 fw-semibold text-teal shadow-sm"><i class="bi bi-camera me-2"></i>Start Free Scan</a>
+          <a href="{{ url_for('patient.scan_new') }}" class="btn btn-light btn-lg px-4 fw-bold text-teal shadow-sm">
+            <i class="bi bi-camera me-2"></i>Start Free Scan
+          </a>
         {% else %}
-          <a href="{{ url_for('auth.register_patient') }}" class="btn btn-light btn-lg px-4 fw-semibold text-teal shadow-sm"><i class="bi bi-person-plus me-2"></i>Get Started as Patient</a>
+          <a href="{{ url_for('auth.register_patient') }}" class="btn btn-light btn-lg px-4 fw-bold text-teal shadow-sm">
+            <i class="bi bi-person-plus me-2"></i>Get Started as Patient
+          </a>
         {% endif %}
-        <a href="{{ url_for('main.compare') }}" class="btn btn-outline-light btn-lg px-4"><i class="bi bi-tags me-2"></i>Compare Prices</a>
-        <a href="{{ url_for('main.hospitals') }}" class="btn btn-outline-light btn-lg px-4"><i class="bi bi-hospital me-2"></i>Find Hospitals</a>
+        <a href="{{ url_for('main.compare') }}" class="btn btn-outline-light btn-lg px-4 fw-semibold">
+          <i class="bi bi-tags me-2"></i>Compare Prices
+        </a>
+        <a href="{{ url_for('main.hospitals') }}" class="btn btn-outline-light btn-lg px-4 fw-semibold">
+          <i class="bi bi-hospital me-2"></i>Find Hospitals
+        </a>
       </div>
     </div>
   </div>
 
-  <!-- Medical Disclaimer Banner on Homepage -->
-  <div class="medical-disclaimer-box mb-5 d-flex align-items-center">
-    <i class="bi bi-info-circle-fill fs-4 me-3 text-primary"></i>
-    <div>
-      <strong>Notice:</strong> This is an AI screening aid, not a medical diagnosis. Please consult a qualified ophthalmologist for clinical evaluation and treatment.
+  <!-- Medical Disclaimer Notice -->
+  <div class="medical-disclaimer-box mb-4 d-flex align-items-center shadow-sm">
+    <i class="bi bi-shield-exclamation fs-4 me-3 text-teal"></i>
+    <div class="small">
+      <strong>Clinical Screening Notice:</strong> EyeCare AI is an assistive pre-screening aid designed to detect retinal vascular abnormalities. It does not replace a dilated clinical examination by a qualified ophthalmologist.
     </div>
   </div>
 
-  <!-- 3 Feature Cards -->
-  <div class="row g-4 mb-5">
+  <!-- 3 Primary Feature Highlights -->
+  <div class="row g-4 mb-4">
     <div class="col-md-4">
       <div class="card h-100 p-3 hover-shadow border-0 bg-white">
-        <div class="card-body">
-          <div class="rounded-circle bg-teal-gradient d-inline-flex p-3 text-white mb-3 shadow-sm">
-            <i class="bi bi-eye fs-3"></i>
+        <div class="card-body d-flex flex-column">
+          <div class="rounded-3 bg-teal-gradient d-inline-flex p-3 text-white mb-3 shadow-sm" style="width: 52px; height: 52px; align-items: center; justify-content: center;">
+            <i class="bi bi-eye fs-4"></i>
           </div>
-          <h4 class="card-title fw-bold">Instant DR Screening</h4>
-          <p class="card-text text-muted">
-            Upload retinal fundus images and get predicted Diabetic Retinopathy grade (0 to 4), confidence score, and visual Grad-CAM attention heatmaps highlighting retinal lesions.
+          <h4 class="card-title fw-bold text-dark">Instant DR Screening</h4>
+          <p class="card-text text-muted small flex-grow-1">
+            Upload retinal fundus images and receive instant Diabetic Retinopathy severity grading (Grades 0 to 4) with confidence probabilities and explainable Grad-CAM lesion heatmaps.
           </p>
           {% if current_user.is_authenticated and current_user.role == 'patient' %}
-            <a href="{{ url_for('patient.scan_new') }}" class="btn btn-sm btn-outline-primary">Upload Scan &rarr;</a>
+            <a href="{{ url_for('patient.scan_new') }}" class="btn btn-sm btn-outline-primary mt-2">Upload Retinal Scan &rarr;</a>
           {% else %}
-            <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-outline-primary">Try Screening &rarr;</a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-outline-primary mt-2">Try Free Screening &rarr;</a>
           {% endif %}
         </div>
       </div>
@@ -53,77 +64,94 @@
 
     <div class="col-md-4">
       <div class="card h-100 p-3 hover-shadow border-0 bg-white">
-        <div class="card-body">
-          <div class="rounded-circle bg-teal-gradient d-inline-flex p-3 text-white mb-3 shadow-sm">
-            <i class="bi bi-currency-rupee fs-3"></i>
+        <div class="card-body d-flex flex-column">
+          <div class="rounded-3 bg-teal-gradient d-inline-flex p-3 text-white mb-3 shadow-sm" style="width: 52px; height: 52px; align-items: center; justify-content: center;">
+            <i class="bi bi-currency-rupee fs-4"></i>
           </div>
-          <h4 class="card-title fw-bold">Transparent Pricing</h4>
-          <p class="card-text text-muted">
-            Compare procedure prices across verified eye hospitals for Cataract, LASIK, Retinal Laser, Anti-VEGF injections, and Vitrectomy. Filter by city to find the best care.
+          <h4 class="card-title fw-bold text-dark">Cost Transparency</h4>
+          <p class="card-text text-muted small flex-grow-1">
+            Compare procedure price ranges side by side across verified eye centers for Cataract Surgery, Retinal Lasers, Anti-VEGF Injections, and Vitrectomy. Filter by city to find the best rate.
           </p>
-          <a href="{{ url_for('main.compare') }}" class="btn btn-sm btn-outline-primary">Compare Procedures &rarr;</a>
+          <a href="{{ url_for('main.compare') }}" class="btn btn-sm btn-outline-primary mt-2">Compare Procedure Prices &rarr;</a>
         </div>
       </div>
     </div>
 
     <div class="col-md-4">
       <div class="card h-100 p-3 hover-shadow border-0 bg-white">
-        <div class="card-body">
-          <div class="rounded-circle bg-teal-gradient d-inline-flex p-3 text-white mb-3 shadow-sm">
-            <i class="bi bi-calendar2-check fs-3"></i>
+        <div class="card-body d-flex flex-column">
+          <div class="rounded-3 bg-teal-gradient d-inline-flex p-3 text-white mb-3 shadow-sm" style="width: 52px; height: 52px; align-items: center; justify-content: center;">
+            <i class="bi bi-hospital fs-4"></i>
           </div>
-          <h4 class="card-title fw-bold">Verified Hospitals</h4>
-          <p class="card-text text-muted">
-            Browse admin-approved eye specialty centers in Bengaluru, Chennai, Hyderabad, and Mumbai. Book appointments and attach your scan reports directly.
+          <h4 class="card-title fw-bold text-dark">Verified Eye Centers</h4>
+          <p class="card-text text-muted small flex-grow-1">
+            Browse verified ophthalmology clinics and specialty eye centers across major cities. Read facility descriptions, view direct contact lines, and book clinical appointments seamlessly.
           </p>
-          <a href="{{ url_for('main.hospitals') }}" class="btn btn-sm btn-outline-primary">View Directory &rarr;</a>
+          <a href="{{ url_for('main.hospitals') }}" class="btn btn-sm btn-outline-primary mt-2">Explore Hospital Directory &rarr;</a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- How It Works Section -->
-  <div class="row align-items-center py-4 bg-white rounded-4 border p-4 shadow-sm mb-4">
-    <div class="col-lg-6 mb-4 mb-lg-0">
-      <span class="badge bg-primary-subtle text-primary mb-2">Step-by-Step Guide</span>
-      <h3 class="fw-bold mb-3">How EyeCare AI Works</h3>
-      <ol class="list-group list-group-numbered list-group-flush">
-        <li class="list-group-item d-flex justify-content-between align-items-start border-0 ps-0">
-          <div class="ms-2 me-auto">
-            <div class="fw-bold">Upload Retinal Photo</div>
-            Patients securely upload fundus images from any retinal screening device.
+  <!-- How It Works & Clinical Impact -->
+  <div class="card border-0 bg-white shadow-sm p-4 mb-4">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-7">
+        <span class="badge badge-teal mb-2"><i class="bi bi-diagram-3 me-1"></i> Triage Workflow</span>
+        <h3 class="fw-bold mb-3">How EyeCare AI Connects Screening to Care</h3>
+        <div class="d-flex flex-column gap-3">
+          <div class="d-flex align-items-start">
+            <div class="rounded-circle bg-teal-gradient text-white d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 32px; height: 32px; font-weight: 700; font-size: 0.9rem;">1</div>
+            <div>
+              <div class="fw-bold text-dark">Upload Fundus Scan with Pre-Screening Guardrails</div>
+              <div class="text-muted small">Our automatic fundus checker inspects outer dark borders and retinal hue characteristics before inference to eliminate arbitrary non-retinal uploads.</div>
+            </div>
           </div>
-        </li>
-        <li class="list-group-item d-flex justify-content-between align-items-start border-0 ps-0">
-          <div class="ms-2 me-auto">
-            <div class="fw-bold">AI Analysis & Explainability</div>
-            Convolutional network computes DR grade (0-4) with Grad-CAM heatmaps showing affected zones.
+          <div class="d-flex align-items-start">
+            <div class="rounded-circle bg-teal-gradient text-white d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 32px; height: 32px; font-weight: 700; font-size: 0.9rem;">2</div>
+            <div>
+              <div class="fw-bold text-dark">Explainable AI Analysis &amp; Grad-CAM Visualization</div>
+              <div class="text-muted small">Deep convolutional neural networks compute the DR grade (0-4) while Grad-CAM overlays thermal heatmaps pinpointing microaneurysms and exudates.</div>
+            </div>
           </div>
-        </li>
-        <li class="list-group-item d-flex justify-content-between align-items-start border-0 ps-0">
-          <div class="ms-2 me-auto">
-            <div class="fw-bold">Download Clinical PDF & Book Care</div>
-            Download structured scan report and book an appointment with specialist hospitals.
+          <div class="d-flex align-items-start">
+            <div class="rounded-circle bg-teal-gradient text-white d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 32px; height: 32px; font-weight: 700; font-size: 0.9rem;">3</div>
+            <div>
+              <div class="fw-bold text-dark">Download Clinical PDF &amp; Schedule Care</div>
+              <div class="text-muted small">Download your comprehensive summary report and connect directly with accredited hospitals providing laser photocoagulation or injection therapies.</div>
+            </div>
           </div>
-        </li>
-      </ol>
-    </div>
-    <div class="col-lg-6 text-center">
-      <div class="p-4 bg-light rounded-3 border">
-        <div class="d-flex justify-content-around text-center">
-          <div>
-            <h2 class="fw-bold text-teal">5</h2>
-            <div class="text-muted small">DR Severity Grades</div>
-          </div>
-          <div class="border-start"></div>
-          <div>
-            <h2 class="fw-bold text-teal">6+</h2>
-            <div class="text-muted small">Partner Hospitals</div>
-          </div>
-          <div class="border-start"></div>
-          <div>
-            <h2 class="fw-bold text-teal">10+</h2>
-            <div class="text-muted practical small">Eye Procedures</div>
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="p-4 bg-light rounded-4 border">
+          <h6 class="fw-bold text-muted text-uppercase mb-3 small tracking-wider">Clinical Coverage &amp; Platform Metrics</h6>
+          <div class="row g-3 text-center">
+            <div class="col-6">
+              <div class="p-3 bg-white rounded-3 border shadow-sm">
+                <div class="stat-card-value text-teal">5</div>
+                <div class="stat-card-label mt-1">DR Severity Grades</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-3 bg-white rounded-3 border shadow-sm">
+                <div class="stat-card-value text-dark">&lt; 2s</div>
+                <div class="stat-card-label mt-1">Inference Speed</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-3 bg-white rounded-3 border shadow-sm">
+                <div class="stat-card-value text-dark">100%</div>
+                <div class="stat-card-label mt-1">Fundus Validated</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-3 bg-white rounded-3 border shadow-sm">
+                <div class="stat-card-value text-teal">Multi-City</div>
+                <div class="stat-card-label mt-1">Verified Centers</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

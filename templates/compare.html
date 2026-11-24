@@ -5,34 +5,49 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 {% endblock %}
 {% block content %}
-<div class="container py-2">
+<div class="container py-3">
+  <!-- Header Section -->
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
     <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <span class="badge badge-teal"><i class="bi bi-bar-chart-line-fill me-1"></i> Cost Transparency</span>
+        <span class="badge bg-light text-muted border">Sample prices for demo</span>
+      </div>
       <h2 class="fw-bold mb-1"><i class="bi bi-tags text-teal me-2"></i>Procedure Price Comparison</h2>
-      <p class="text-muted small mb-0">Compare estimated procedure costs across verified eye hospitals to make informed decisions</p>
+      <p class="text-muted small mb-0">Compare estimated procedure costs across verified eye hospitals to make informed clinical and financial decisions.</p>
     </div>
-    <div class="badge bg-light text-secondary border px-3 py-2">
-      <i class="bi bi-info-circle me-1"></i> Sample prices for demo
-    </div>
+    {% if selected_procedure_obj %}
+      <div class="mt-2 mt-md-0">
+        <a href="{{ url_for('main.compare') }}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Selection
+        </a>
+      </div>
+    {% endif %}
   </div>
 
-  <!-- Selector Form -->
-  <div class="card p-3 mb-4 border-0 shadow-sm bg-white">
-    <form method="GET" action="{{ url_for('main.compare') }}" class="row g-2 align-items-end">
+  <!-- Selector Form Card -->
+  <div class="card p-4 mb-4 border-0 shadow-sm bg-white">
+    <form method="GET" action="{{ url_for('main.compare') }}" class="row g-3 align-items-end">
       <div class="col-md-5">
-        <label class="form-label small fw-semibold text-muted mb-1">Select Procedure to Compare *</label>
-        <select name="procedure" class="form-select" required>
-          <option value="">-- Choose Procedure --</option>
+        <label class="form-label small fw-bold text-secondary mb-1">
+          <i class="bi bi-clipboard2-pulse text-teal me-1"></i> Select Procedure to Compare *
+        </label>
+        <select name="procedure" class="form-select shadow-none" required>
+          <option value="">-- Choose Eye Procedure --</option>
           {% for p in procedures %}
-            <option value="{{ p.id }}" {% if selected_procedure == p.id %}selected{% endif %}>{{ p.name }} ({{ p.category }})</option>
+            <option value="{{ p.id }}" {% if selected_procedure == p.id %}selected{% endif %}>
+              {{ p.name }} ({{ p.category }})
+            </option>
           {% endfor %}
         </select>
       </div>
 
       <div class="col-md-4">
-        <label class="form-label small fw-semibold text-muted mb-1">Filter by City (Optional)</label>
-        <select name="city" class="form-select">
-          <option value="">All Cities</option>
+        <label class="form-label small fw-bold text-secondary mb-1">
+          <i class="bi bi-geo-alt text-teal me-1"></i> Filter by City (Optional)
+        </label>
+        <select name="city" class="form-select shadow-none">
+          <option value="">All Available Cities</option>
           {% for c in cities %}
             <option value="{{ c }}" {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
           {% endfor %}
@@ -40,100 +55,221 @@
       </div>
 
       <div class="col-md-3">
-        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-arrow-left-right me-1"></i> Compare Prices</button>
+        <button type="submit" class="btn btn-primary w-100 py-2">
+          <i class="bi bi-arrow-left-right me-1"></i> Compare Prices
+        </button>
       </div>
     </form>
   </div>
 
   {% if selected_procedure_obj %}
-    <!-- Chart and Table Section -->
-    <div class="mb-4">
-      <div class="card border-0 bg-white shadow-sm p-4 mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="fw-bold mb-0">
-            <i class="bi bi-bar-chart-fill text-teal me-2"></i>Price Comparison Chart: {{ selected_procedure_obj.name }}
-          </h5>
-          <span class="text-muted small">Sample prices for demo</span>
+    {% if results %}
+      <!-- Price Summary Statistics Cards -->
+      {% set min_list = [] %}
+      {% set max_list = [] %}
+      {% for r in results %}
+        {% set _ = min_list.append(r.price_min) %}
+        {% set _ = max_list.append(r.price_max) %}
+      {% endfor %}
+      {% set lowest_price = min_list|min %}
+      {% set highest_price = max_list|max %}
+      {% set avg_min = (min_list|sum / min_list|length)|round|int %}
+      {% set avg_max = (max_list|sum / max_list|length)|round|int %}
+
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="stat-card-label">Lowest Starting Price</span>
+              <div class="stat-card-icon bg-success-subtle text-success">
+                <i class="bi bi-tag-fill"></i>
+              </div>
+            </div>
+            <div class="stat-card-value text-success">₹{{ "{:,}".format(lowest_price) }}</div>
+            <div class="text-muted small mt-1 text-truncate">
+              Best starting rate: <strong>{{ results[0].hospital.name }}</strong>
+            </div>
+          </div>
         </div>
-        <div style="position: relative; height: 320px;">
-          <canvas id="priceComparisonChart"></canvas>
+
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="stat-card-label">Average Price Range</span>
+              <div class="stat-card-icon bg-info-subtle text-info">
+                <i class="bi bi-calculator-fill"></i>
+              </div>
+            </div>
+            <div class="stat-card-value" style="font-size: 1.35rem;">
+              ₹{{ "{:,}".format(avg_min) }} - ₹{{ "{:,}".format(avg_max) }}
+            </div>
+            <div class="text-muted small mt-1">Across all matching hospitals</div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="stat-card-label">Highest Estimate</span>
+              <div class="stat-card-icon bg-danger-subtle text-danger">
+                <i class="bi bi-graph-up-arrow"></i>
+              </div>
+            </div>
+            <div class="stat-card-value text-dark">₹{{ "{:,}".format(highest_price) }}</div>
+            <div class="text-muted small mt-1">Maximum premium rate</div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="stat-card-label">Hospitals Offering</span>
+              <div class="stat-card-icon bg-primary-subtle text-teal">
+                <i class="bi bi-hospital-fill"></i>
+              </div>
+            </div>
+            <div class="stat-card-value text-teal">{{ results|length }}</div>
+            <div class="text-muted small mt-1">
+              {% if selected_city %}In {{ selected_city }}{% else %}Across all cities{% endif %}
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Price Table -->
+      <!-- Chart Card Section -->
+      <div class="card border-0 bg-white shadow-sm p-4 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom">
+          <div>
+            <h5 class="fw-bold mb-1">
+              <i class="bi bi-bar-chart-fill text-teal me-2"></i>{{ selected_procedure_obj.name }} — Hospital Price Comparison
+            </h5>
+            <p class="text-muted small mb-0">
+              Clear side-by-side comparison. Hospital names are positioned horizontally for effortless readability.
+            </p>
+          </div>
+          <div class="d-flex align-items-center gap-3 mt-2 mt-sm-0">
+            <span class="badge badge-teal"><i class="bi bi-check2-circle me-1"></i>{{ results|length }} Centers Listed</span>
+          </div>
+        </div>
+
+        <!-- Dynamic Chart Wrapper: Height automatically set by JS based on number of hospitals -->
+        <div id="chartContainerWrapper" class="chart-wrapper">
+          <canvas id="priceComparisonChart"></canvas>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top text-muted small">
+          <div><i class="bi bi-info-circle me-1"></i> Click on legend items above to toggle Minimum or Maximum price bars.</div>
+          <div>All figures in Indian Rupees (₹)</div>
+        </div>
+      </div>
+
+      <!-- Price Table Section -->
       <div class="card border-0 bg-white shadow-sm">
-        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-          <h5 class="fw-bold mb-0">
-            <i class="bi bi-table text-teal me-2"></i>Hospitals Offering {{ selected_procedure_obj.name }}
-          </h5>
-          <span class="badge bg-success-subtle text-success border border-success-subtle">
-            Sorted by Lowest Minimum Price
+        <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap justify-content-between align-items-center">
+          <div>
+            <h5 class="fw-bold mb-0">
+              <i class="bi bi-table text-teal me-2"></i>Ranked Hospitals Offering {{ selected_procedure_obj.name }}
+            </h5>
+            <small class="text-muted">Sorted automatically by lowest starting price</small>
+          </div>
+          <span class="badge bg-success-subtle text-success border border-success-subtle mt-2 mt-sm-0">
+            <i class="bi bi-sort-numeric-down me-1"></i> Sorted by Minimum Price
           </span>
         </div>
         <div class="card-body p-0">
-          {% if results %}
-            <div class="table-responsive">
-              <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th>Rank</th>
-                    <th>Hospital</th>
-                    <th>City</th>
-                    <th>Minimum Price</th>
-                    <th>Maximum Price</th>
-                    <th>Price Estimate</th>
-                    <th class="text-end">Action</th>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th style="width: 80px;">Rank</th>
+                  <th>Hospital Center</th>
+                  <th>Location</th>
+                  <th>Starting Price (Min)</th>
+                  <th>Maximum Estimate</th>
+                  <th>Price Range (Min - Max)</th>
+                  <th class="text-end" style="width: 130px;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for hp in results %}
+                  <tr class="{% if loop.first %}table-cheapest{% endif %}">
+                    <td>
+                      {% if loop.first %}
+                        <span class="badge bg-success shadow-sm">
+                          <i class="bi bi-trophy-fill me-1"></i>#1 Best
+                        </span>
+                      {% else %}
+                        <span class="badge bg-light text-dark border">#{{ loop.index }}</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <div class="fw-bold text-dark">{{ hp.hospital.name }}</div>
+                      <div class="text-muted small"><i class="bi bi-telephone me-1"></i>{{ hp.hospital.phone or 'Verified Partner' }}</div>
+                    </td>
+                    <td>
+                      <span class="badge bg-light text-dark border"><i class="bi bi-geo-alt me-1 text-teal"></i>{{ hp.hospital.city }}</span>
+                    </td>
+                    <td>
+                      <span class="fw-bold text-success fs-6">₹{{ "{:,}".format(hp.price_min) }}</span>
+                    </td>
+                    <td>
+                      <span class="fw-bold text-dark fs-6">₹{{ "{:,}".format(hp.price_max) }}</span>
+                    </td>
+                    <td>
+                      <div class="small text-muted">₹{{ "{:,}".format(hp.price_min) }} &ndash; ₹{{ "{:,}".format(hp.price_max) }}</div>
+                      <div class="progress mt-1" style="height: 4px; max-width: 140px;">
+                        <div class="progress-bar bg-teal-gradient" role="progressbar" style="width: {{ ((hp.price_min / highest_price) * 100)|round|int }}%;"></div>
+                      </div>
+                    </td>
+                    <td class="text-end">
+                      {% if current_user.is_authenticated and current_user.role == 'patient' %}
+                        <a href="{{ url_for('patient.book_appointment', hospital_id=hp.hospital_id, procedure=hp.procedure_id) }}" class="btn btn-sm btn-primary">
+                          <i class="bi bi-calendar-plus me-1"></i> Book
+                        </a>
+                      {% else %}
+                        <a href="{{ url_for('auth.login', next=url_for('patient.book_appointment', hospital_id=hp.hospital_id, procedure=hp.procedure_id)) }}" class="btn btn-sm btn-primary">
+                          <i class="bi bi-calendar-plus me-1"></i> Book
+                        </a>
+                      {% endif %}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {% for hp in results %}
-                    <tr class="{% if loop.first %}table-cheapest{% endif %}">
-                      <td>
-                        {% if loop.first %}
-                          <span class="badge bg-success"><i class="bi bi-trophy-fill me-1"></i>Lowest Price</span>
-                        {% else %}
-                          <span class="badge bg-light text-dark border">#{{ loop.index }}</span>
-                        {% endif %}
-                      </td>
-                      <td>
-                        <strong>{{ hp.hospital.name }}</strong>
-                        <div class="text-muted small">{{ hp.hospital.phone or 'Verified Hospital' }}</div>
-                      </td>
-                      <td><span class="badge bg-light text-dark border">{{ hp.hospital.city }}</span></td>
-                      <td class="fw-bold text-success">₹{{ "{:,}".format(hp.price_min) }}</td>
-                      <td class="fw-bold text-dark">₹{{ "{:,}".format(hp.price_max) }}</td>
-                      <td>
-                        <span class="text-muted small">Sample prices for demo</span>
-                      </td>
-                      <td class="text-end">
-                        {% if current_user.is_authenticated and current_user.role == 'patient' %}
-                          <a href="{{ url_for('patient.book_appointment', hospital_id=hp.hospital_id, procedure=hp.procedure_id) }}" class="btn btn-sm btn-primary">
-                            <i class="bi bi-calendar-plus me-1"></i> Book
-                          </a>
-                        {% else %}
-                          <a href="{{ url_for('auth.login', next=url_for('patient.book_appointment', hospital_id=hp.hospital_id, procedure=hp.procedure_id)) }}" class="btn btn-sm btn-primary">
-                            <i class="bi bi-calendar-plus me-1"></i> Book
-                          </a>
-                        {% endif %}
-                      </td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          {% else %}
-            <div class="p-4 text-center text-muted">
-              No partner hospitals offering this procedure match the chosen city filter.
-            </div>
-          {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
+    {% else %}
+      <div class="card p-5 text-center bg-white border-0 shadow-sm">
+        <i class="bi bi-building-slash fs-1 text-muted mb-3"></i>
+        <h4 class="fw-bold">No Matching Hospitals Found</h4>
+        <p class="text-muted col-md-6 mx-auto">
+          No verified eye hospitals offering <strong>{{ selected_procedure_obj.name }}</strong> match the chosen city filter ({{ selected_city }}).
+          Try selecting "All Available Cities" to view options nationwide.
+        </p>
+        <div>
+          <a href="{{ url_for('main.compare', procedure=selected_procedure) }}" class="btn btn-outline-primary">
+            <i class="bi bi-globe me-1"></i> View in All Cities
+          </a>
+        </div>
+      </div>
+    {% endif %}
   {% else %}
+    <!-- Empty State Prompt -->
     <div class="card p-5 text-center bg-white border-0 shadow-sm">
-      <i class="bi bi-tags fs-1 text-teal mb-3"></i>
-      <h4 class="fw-bold">Select a Procedure to Compare</h4>
-      <p class="text-muted col-md-6 mx-auto">Choose an eye procedure above (e.g., Cataract Surgery, Retinal Laser, Anti-VEGF Injection, or LASIK) to compare price ranges side by side across top eye care hospitals.</p>
+      <div class="rounded-circle bg-teal-gradient d-inline-flex p-3 text-white mb-3 mx-auto shadow-sm" style="width: 64px; height: 64px; align-items: center; justify-content: center;">
+        <i class="bi bi-tags fs-2"></i>
+      </div>
+      <h4 class="fw-bold mb-2">Select a Procedure to Compare</h4>
+      <p class="text-muted col-md-6 mx-auto mb-4">
+        Choose an ophthalmic procedure above (such as Cataract Surgery, Retinal Laser, Anti-VEGF Injection, or LASIK) to view transparent price benchmarks and compare rates side by side across verified eye hospitals.
+      </p>
+      <div class="d-flex flex-wrap gap-2 justify-content-center">
+        {% for p in procedures[:4] %}
+          <a href="{{ url_for('main.compare', procedure=p.id) }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-search me-1"></i> {{ p.name }}
+          </a>
+        {% endfor %}
+      </div>
     </div>
   {% endif %}
 </div>
@@ -142,11 +278,19 @@
 {% block scripts %}
 {% if selected_procedure_obj and results %}
 <script>
-  const ctx = document.getElementById('priceComparisonChart').getContext('2d');
-  
-  const labels = [
+document.addEventListener("DOMContentLoaded", function() {
+  const chartCanvas = document.getElementById('priceComparisonChart');
+  if (!chartCanvas) return;
+
+  const rawLabels = [
     {% for hp in results %}
-      "{{ hp.hospital.name }} ({{ hp.hospital.city }})",
+      "{{ hp.hospital.name }}",
+    {% endfor %}
+  ];
+
+  const cities = [
+    {% for hp in results %}
+      "{{ hp.hospital.city }}",
     {% endfor %}
   ];
 
@@ -162,49 +306,166 @@
     {% endfor %}
   ];
 
+  // Format labels as multi-line arrays [Hospital Name, '📍 City']
+  // This guarantees labels sit HORIZONTALLY on the Y-axis without any slanting!
+  const formattedLabels = rawLabels.map((name, idx) => {
+    return [name, '📍 ' + cities[idx]];
+  });
+
+  // Dynamically calculate responsive height based on number of items
+  // Solves the problem where the graph looks "small sometimes and big sometimes"
+  const rowHeight = 65; // Balanced comfortable row height
+  const basePadding = 90; // Header & legend room
+  const dynamicHeight = Math.max(280, Math.min(800, (formattedLabels.length * rowHeight) + basePadding));
+  
+  const container = document.getElementById('chartContainerWrapper');
+  if (container) {
+    container.style.height = dynamicHeight + 'px';
+  }
+
+  const ctx = chartCanvas.getContext('2d');
+
+  // Create subtle gradient fills for modern aesthetic
+  const tealGradient = ctx.createLinearGradient(0, 0, 400, 0);
+  tealGradient.addColorStop(0, '#0d9488');
+  tealGradient.addColorStop(1, '#14b8a6');
+
+  const blueGradient = ctx.createLinearGradient(0, 0, 400, 0);
+  blueGradient.addColorStop(0, '#0284c7');
+  blueGradient.addColorStop(1, '#38bdf8');
+
   new Chart(ctx, {
     type: 'bar',
+    // KEY FIX: indexAxis 'y' turns this into a horizontal bar chart
+    // Hospital names sit on the Y-axis and are 100% HORIZONTAL (never slanted!)
+    indexAxis: 'y',
     data: {
-      labels: labels,
+      labels: formattedLabels,
       datasets: [
         {
-          label: 'Min Price (₹)',
+          label: 'Minimum Starting Price',
           data: minPrices,
-          backgroundColor: '#0d9488',
-          borderRadius: 4
+          backgroundColor: tealGradient,
+          borderColor: '#0f766e',
+          borderWidth: 1,
+          borderRadius: 6,
+          borderSkipped: false,
+          maxBarThickness: 22,
+          barPercentage: 0.82,
+          categoryPercentage: 0.85
         },
         {
-          label: 'Max Price (₹)',
+          label: 'Maximum Estimated Rate',
           data: maxPrices,
-          backgroundColor: '#0284c7',
-          borderRadius: 4
+          backgroundColor: blueGradient,
+          borderColor: '#0369a1',
+          borderWidth: 1,
+          borderRadius: 6,
+          borderSkipped: false,
+          maxBarThickness: 22,
+          barPercentage: 0.82,
+          categoryPercentage: 0.85
         }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      layout: {
+        padding: {
+          left: 10,
+          right: 25,
+          top: 10,
+          bottom: 10
+        }
+      },
       scales: {
-        y: {
+        x: {
           beginAtZero: true,
+          grid: {
+            color: '#f1f5f9',
+            drawBorder: false
+          },
           ticks: {
+            color: '#64748b',
+            font: {
+              size: 11,
+              weight: '500'
+            },
             callback: function(value) {
-              return '₹' + value.toLocaleString();
+              return '₹' + Number(value).toLocaleString('en-IN');
             }
+          },
+          title: {
+            display: true,
+            text: 'Estimated Procedure Cost (₹ INR)',
+            color: '#64748b',
+            font: {
+              size: 12,
+              weight: '600'
+            },
+            padding: { top: 8 }
+          }
+        },
+        y: {
+          grid: {
+            display: false,
+            drawBorder: false
+          },
+          ticks: {
+            // Guarantee labels are completely horizontal and legible
+            autoSkip: false,
+            color: '#0f172a',
+            font: {
+              size: 12,
+              weight: '600'
+            },
+            padding: 12
           }
         }
       },
       plugins: {
+        legend: {
+          position: 'top',
+          align: 'end',
+          labels: {
+            boxWidth: 14,
+            boxHeight: 14,
+            borderRadius: 3,
+            useBorderRadius: true,
+            color: '#334155',
+            font: {
+              size: 12,
+              weight: '600'
+            },
+            padding: 16
+          }
+        },
         tooltip: {
+          backgroundColor: '#0f172a',
+          titleColor: '#ffffff',
+          bodyColor: '#e2e8f0',
+          borderColor: '#334155',
+          borderWidth: 1,
+          padding: 12,
+          cornerRadius: 8,
+          boxPadding: 6,
           callbacks: {
+            title: function(items) {
+              if (!items.length) return '';
+              const idx = items[0].dataIndex;
+              return rawLabels[idx] + ' (' + cities[idx] + ')';
+            },
             label: function(context) {
-              return context.dataset.label + ': ₹' + context.raw.toLocaleString();
+              const val = context.raw || 0;
+              return ' ' + context.dataset.label + ': ₹' + Number(val).toLocaleString('en-IN');
             }
           }
         }
       }
     }
   });
+});
 </script>
 {% endif %}
 {% endblock %}
