@@ -161,3 +161,21 @@ EyeCare-AI/
     ├── heatmaps/          # Generated Grad-CAM attention heatmaps
     └── reports/           # Generated PDF reports
 ```
+
+
+---
+
+## Deploying to Vercel (1-Click Setup)
+
+This repository is pre-configured for direct, zero-configuration deployment on **Vercel**:
+
+1. Go to **[vercel.com](https://vercel.com)** and log in with your GitHub account.
+2. Click **"Add New..."** &rarr; **"Project"**.
+3. Select this repository (**`EyeCare-AI`**).
+4. Leave all settings at their defaults:
+   - **Framework Preset**: *Other*
+   - **Root Directory**: `./`
+   - **Build & Output Settings**: Default (handled by `vercel.json`)
+5. Click **"Deploy"**.
+
+Vercel will automatically build the serverless functions and provide your live production URL (e.g., `https://eyecare-ai.vercel.app`).

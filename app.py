@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, flash, redirect, request
+from flask import Flask, render_template, flash, redirect, request, send_from_directory
 from flask_login import LoginManager
 from config import Config
 from models import db, User
@@ -22,7 +22,7 @@ def create_app(config_class=Config):
     db.init_app(app)
     login_manager.init_app(app)
 
-    # Ensure required static folders exist
+    # Ensure required static/runtime folders exist
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
     os.makedirs(app.config["HEATMAP_FOLDER"], exist_ok=True)
     os.makedirs(app.config["REPORT_FOLDER"], exist_ok=True)
@@ -42,6 +42,19 @@ def create_app(config_class=Config):
     app.register_blueprint(admin_bp)
     app.register_blueprint(api_bp)
 
+    # Custom static routes to serve runtime uploads / heatmaps / reports (supports /tmp on Vercel)
+    @app.route("/static/uploads/<path:filename>")
+    def serve_upload(filename):
+        return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+
+    @app.route("/static/heatmaps/<path:filename>")
+    def serve_heatmap(filename):
+        return send_from_directory(app.config["HEATMAP_FOLDER"], filename)
+
+    @app.route("/static/reports/<path:filename>")
+    def serve_report(filename):
+        return send_from_directory(app.config["REPORT_FOLDER"], filename)
+
     # Error handlers
     @app.errorhandler(403)
     def forbidden(e):
@@ -56,9 +69,17 @@ def create_app(config_class=Config):
         flash("File is too large. Maximum allowed size is 5 MB.", "danger")
         return redirect(request.referrer or "/")
 
-    # Ensure database schema is created
+    # Ensure database schema is created and auto-seed if empty
     with app.app_context():
         db.create_all()
+        try:
+            from models import User
+            if User.query.first() is None:
+                from seed import populate_seed_data
+                populate_seed_data()
+                print("[EyeCare AI] Database initialized & seeded with default hospitals and procedures.")
+        except Exception as e:
+            print(f"[EyeCare AI] Auto-seed status: {e}")
 
     return app
 

@@ -1,0 +1,12 @@
+ml/dr_model.keras
+test_assets/
+__pycache__/
+*.pyc
+*.pptx
+*.pdf
+.git/
+.impeccable/
+verify_*.py
+test_*.py
+eyecare-docs/
+scratch/
