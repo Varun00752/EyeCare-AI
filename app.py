@@ -45,17 +45,14 @@ def create_app(config_class=Config):
     # Custom media routes to serve runtime uploads / heatmaps / reports
     # (Uses /media/... so Flask's built-in /static/ handler does not intercept /tmp files on Vercel)
     @app.route("/media/uploads/<path:filename>")
-    @app.route("/static/uploads/<path:filename>")
     def serve_upload(filename):
         return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
     @app.route("/media/heatmaps/<path:filename>")
-    @app.route("/static/heatmaps/<path:filename>")
     def serve_heatmap(filename):
         return send_from_directory(app.config["HEATMAP_FOLDER"], filename)
 
     @app.route("/media/reports/<path:filename>")
-    @app.route("/static/reports/<path:filename>")
     def serve_report(filename):
         return send_from_directory(app.config["REPORT_FOLDER"], filename)
 
