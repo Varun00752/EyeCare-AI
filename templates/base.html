@@ -18,13 +18,10 @@
   {% block head %}{% endblock %}
 </head>
 <body>
-  <!-- Global Ambient Motion Graphics Layer (Light Blue Medical Glow & Floating Auroras) -->
+  <!-- Global Ambient Motion Graphics Layer (Uniform Light-Blue Animated Background) -->
   <div class="global-motion-bg" aria-hidden="true">
-    <div class="global-orb orb-light-cyan"></div>
-    <div class="global-orb orb-light-teal"></div>
-    <div class="global-orb orb-light-blue"></div>
-    <div class="global-orb orb-soft-sky"></div>
     <div class="global-grid-pattern"></div>
+    <canvas id="globalBgCanvas"></canvas>
   </div>
 
   <!-- Navigation bar with frosted glass effect & brand logo -->
@@ -464,6 +461,107 @@
         input.value = '';
         sendChatMessage(text, null);
       });
+    })();
+  </script>
+
+  <!-- Global Ambient Light-Blue Wave & Particle Background Animation -->
+  <script>
+    (function () {
+      const canvas = document.getElementById('globalBgCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      let w = 0, h = 0, time = 0;
+      let animId = null;
+
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        w = window.innerWidth;
+        h = window.innerHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      // Soft floating bokeh particles evenly distributed across the viewport
+      const particles = [];
+      const particleCount = 26;
+      const palette = [
+        'rgba(56, 189, 248, 0.16)',  // Sky blue
+        'rgba(14, 165, 233, 0.12)',  // Cerulean
+        'rgba(20, 184, 166, 0.14)',  // Medical teal
+        'rgba(96, 165, 250, 0.15)'   // Soft blue
+      ];
+
+      function initParticles() {
+        particles.length = 0;
+        for (let i = 0; i < particleCount; i++) {
+          particles.push({
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+            r: Math.random() * 16 + 6,
+            vy: -(Math.random() * 0.35 + 0.15),
+            vx: (Math.random() - 0.5) * 0.25,
+            swayPhase: Math.random() * Math.PI * 2,
+            swaySpeed: 0.01 + Math.random() * 0.01,
+            color: palette[i % palette.length]
+          });
+        }
+      }
+
+      function drawWave(yOffset, amplitude, wavelength, speed, fillStyle) {
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        for (let x = 0; x <= w + 20; x += 20) {
+          const y = yOffset + Math.sin(x * wavelength + time * speed) * amplitude
+                            + Math.cos(x * wavelength * 0.5 - time * speed * 0.7) * (amplitude * 0.4);
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(w, h);
+        ctx.closePath();
+        ctx.fillStyle = fillStyle;
+        ctx.fill();
+      }
+
+      function render() {
+        if (!document.hidden) {
+          ctx.clearRect(0, 0, w, height = h);
+          time += 0.015;
+
+          // 3 smooth layered ambient waves across the lower half
+          drawWave(h * 0.62, 32, 0.0028, 0.8, 'rgba(56, 189, 248, 0.07)');
+          drawWave(h * 0.74, 38, 0.0022, -0.6, 'rgba(20, 184, 166, 0.065)');
+          drawWave(h * 0.85, 26, 0.0035, 1.0, 'rgba(96, 165, 250, 0.08)');
+
+          // Draw floating light-blue/teal bokeh bubbles
+          for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            p.swayPhase += p.swaySpeed;
+            p.x += p.vx + Math.sin(p.swayPhase) * 0.18;
+            p.y += p.vy;
+
+            if (p.y < -p.r * 2) {
+              p.y = h + p.r * 2;
+              p.x = Math.random() * w;
+            }
+            if (p.x < -p.r * 2) p.x = w + p.r * 2;
+            if (p.x > w + p.r * 2) p.x = -p.r * 2;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+          }
+        }
+        animId = requestAnimationFrame(render);
+      }
+
+      window.addEventListener('resize', resize);
+      resize();
+      initParticles();
+      render();
     })();
   </script>
   {% block scripts %}{% endblock %}

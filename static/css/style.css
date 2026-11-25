@@ -48,9 +48,13 @@
 }
 
 /* Base Document Styles with Global Ambient Motion Canvas */
+html {
+  background-color: #e8f4fc;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  background-color: var(--bg-page);
+  background-color: transparent;
   color: var(--text-secondary);
   min-height: 100vh;
   display: flex;
@@ -61,7 +65,7 @@ body {
 }
 
 /* ==========================================================================
-   Global Ambient Motion Background (Lightish Blue Clinical Aesthetic)
+   Global Ambient Motion Background (Uniform Light-Blue Animated Aesthetic)
    ========================================================================== */
 .global-motion-bg {
   position: fixed;
@@ -72,7 +76,15 @@ body {
   pointer-events: none;
   z-index: -1;
   overflow: hidden;
-  background: linear-gradient(180deg, #edf6fc 0%, #f3f8fd 40%, #eaf4fb 100%);
+  background: linear-gradient(-45deg, #e1f1fd, #eaf6fc, #dcf2f9, #e5f5f8);
+  background-size: 300% 300%;
+  animation: globalGradientFlow 16s ease infinite;
+}
+
+@keyframes globalGradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* Subtle Geometric Medical Tech Grid */
@@ -82,88 +94,18 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: 
-    radial-gradient(rgba(14, 165, 233, 0.08) 1px, transparent 1px),
-    radial-gradient(rgba(13, 148, 136, 0.05) 1px, transparent 1px);
-  background-size: 36px 36px, 72px 72px;
-  background-position: 0 0, 18px 18px;
-  opacity: 0.8;
+  background-image: radial-gradient(rgba(2, 132, 199, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.7;
 }
 
-/* Floating Ambient Light-Blue & Cyan Aurora Orbs */
-.global-orb {
+#globalBgCanvas {
   position: absolute;
-  border-radius: 50%;
-  filter: blur(95px);
-  opacity: 0.6;
-  pointer-events: none;
-  will-change: transform, opacity;
-  animation-iteration-count: infinite;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Orb 1: Upper Right Floating Sky Cyan */
-.orb-light-cyan {
-  width: 580px;
-  height: 580px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.28) 0%, rgba(56, 189, 248, 0.05) 55%, transparent 75%);
-  top: -140px;
-  right: -100px;
-  animation: floatGlobalOrb1 26s infinite alternate ease-in-out;
-}
-
-/* Orb 2: Mid-Left Floating Soft Teal */
-.orb-light-teal {
-  width: 540px;
-  height: 540px;
-  background: radial-gradient(circle, rgba(20, 184, 166, 0.24) 0%, rgba(45, 212, 191, 0.04) 55%, transparent 75%);
-  top: 35%;
-  left: -120px;
-  animation: floatGlobalOrb2 30s infinite alternate ease-in-out;
-}
-
-/* Orb 3: Bottom Right Clinical Soft Blue */
-.orb-light-blue {
-  width: 620px;
-  height: 620px;
-  background: radial-gradient(circle, rgba(96, 165, 250, 0.22) 0%, rgba(147, 197, 253, 0.04) 55%, transparent 75%);
-  bottom: -150px;
-  right: 10%;
-  animation: floatGlobalOrb3 28s infinite alternate ease-in-out;
-}
-
-/* Orb 4: Top Center Soothing Ice Blue */
-.orb-soft-sky {
-  width: 460px;
-  height: 460px;
-  background: radial-gradient(circle, rgba(125, 211, 252, 0.25) 0%, rgba(186, 230, 253, 0.04) 55%, transparent 75%);
-  top: 15%;
-  left: 45%;
-  animation: floatGlobalOrb4 22s infinite alternate ease-in-out;
-}
-
-@keyframes floatGlobalOrb1 {
-  0% { transform: translate(0, 0) scale(1); opacity: 0.55; }
-  50% { transform: translate(-100px, 80px) scale(1.15); opacity: 0.75; }
-  100% { transform: translate(-40px, 140px) scale(0.95); opacity: 0.5; }
-}
-
-@keyframes floatGlobalOrb2 {
-  0% { transform: translate(0, 0) scale(1); opacity: 0.5; }
-  50% { transform: translate(110px, -60px) scale(1.18); opacity: 0.7; }
-  100% { transform: translate(60px, 90px) scale(0.9); opacity: 0.45; }
-}
-
-@keyframes floatGlobalOrb3 {
-  0% { transform: translate(0, 0) scale(0.95); opacity: 0.45; }
-  50% { transform: translate(-80px, -90px) scale(1.12); opacity: 0.65; }
-  100% { transform: translate(70px, -50px) scale(1.02); opacity: 0.5; }
-}
-
-@keyframes floatGlobalOrb4 {
-  0% { transform: translate(-50%, 0) scale(1); opacity: 0.4; }
-  50% { transform: translate(-35%, 60px) scale(1.22); opacity: 0.65; }
-  100% { transform: translate(-65%, -40px) scale(0.88); opacity: 0.4; }
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .main-content {
