@@ -2,27 +2,45 @@
 {% block title %}EyeCare AI — Intelligent Diabetic Retinopathy Screening & Care Directory{% endblock %}
 {% block content %}
 <div class="container">
-  <!-- Hero Section with Deep Medical Gradient -->
-  <div class="p-5 mb-4 hero-gradient text-white rounded-4 shadow-lg position-relative">
+  <!-- Hero Section with Deep Medical Gradient & Ambient Motion Graphics -->
+  <div class="p-5 mb-4 hero-gradient text-white rounded-4 shadow-lg position-relative" id="heroSection">
+    <!-- Ambient Floating Aurora Orbs -->
+    <div class="hero-aurora-orb hero-orb-1"></div>
+    <div class="hero-aurora-orb hero-orb-2"></div>
+    <div class="hero-aurora-orb hero-orb-3"></div>
+
+    <!-- Interactive Retinal Neural Motion Canvas -->
+    <canvas id="retinaMotionCanvas" class="position-absolute top-0 start-0 w-100 h-100" style="z-index: 1; pointer-events: none;"></canvas>
+
     <div class="container-fluid py-3 position-relative" style="z-index: 2;">
+      <!-- Live Status Badge -->
+      <div class="mb-3">
+        <span class="hero-ai-badge px-3 py-1 rounded-pill">
+          <span class="pulse-radar-dot me-1"></span>
+          <span class="fw-semibold">AI Retinal Screening Engine Active</span>
+          <span class="opacity-50 mx-1">&bull;</span>
+          <span class="text-white text-opacity-75">Grad-CAM Explainable</span>
+        </span>
+      </div>
+
       <h1 class="display-4 fw-bold mb-3 tracking-tight">Intelligent Eye Screening &amp; Hospital Care Network</h1>
       <p class="col-md-9 fs-5 mb-4 text-white text-opacity-75 leading-relaxed">
         Early detection of Diabetic Retinopathy saves vision. Upload your retinal fundus photographs for automated 5-grade AI classification, visual Grad-CAM heatmaps, upfront procedure price comparisons, and direct specialist booking.
       </p>
       <div class="d-flex flex-wrap gap-3">
         {% if current_user.is_authenticated and current_user.role == 'patient' %}
-          <a href="{{ url_for('patient.scan_new') }}" class="btn btn-light btn-lg px-4 fw-bold text-teal shadow-sm">
+          <a href="{{ url_for('patient.scan_new') }}" class="btn btn-light btn-lg px-4 fw-bold text-teal shadow-sm hero-action-btn">
             <i class="bi bi-camera me-2"></i>Start Free Scan
           </a>
         {% else %}
-          <a href="{{ url_for('auth.register_patient') }}" class="btn btn-light btn-lg px-4 fw-bold text-teal shadow-sm">
+          <a href="{{ url_for('auth.register_patient') }}" class="btn btn-light btn-lg px-4 fw-bold text-teal shadow-sm hero-action-btn">
             <i class="bi bi-person-plus me-2"></i>Get Started as Patient
           </a>
         {% endif %}
-        <a href="{{ url_for('main.compare') }}" class="btn btn-outline-light btn-lg px-4 fw-semibold">
+        <a href="{{ url_for('main.compare') }}" class="btn btn-outline-light btn-lg px-4 fw-semibold hero-action-btn">
           <i class="bi bi-tags me-2"></i>Compare Prices
         </a>
-        <a href="{{ url_for('main.hospitals') }}" class="btn btn-outline-light btn-lg px-4 fw-semibold">
+        <a href="{{ url_for('main.hospitals') }}" class="btn btn-outline-light btn-lg px-4 fw-semibold hero-action-btn">
           <i class="bi bi-hospital me-2"></i>Find Hospitals
         </a>
       </div>
@@ -154,4 +172,246 @@
     </div>
   </div>
 </div>
+
+<!-- Retinal Neural Motion Graphic Canvas Script -->
+<script>
+(function() {
+  const hero = document.getElementById('heroSection');
+  const canvas = document.getElementById('retinaMotionCanvas');
+  if (!hero || !canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  let width = 0;
+  let height = 0;
+  let animationId = null;
+  let isVisible = true;
+
+  // Mouse tracking relative to hero
+  const mouse = { x: -1000, y: -1000, active: false };
+
+  hero.addEventListener('mousemove', function(e) {
+    const rect = hero.getBoundingClientRect();
+    mouse.x = e.clientX - rect.left;
+    mouse.y = e.clientY - rect.top;
+    mouse.active = true;
+  });
+
+  hero.addEventListener('mouseleave', function() {
+    mouse.active = false;
+    mouse.x = -1000;
+    mouse.y = -1000;
+  });
+
+  // Color palette: Medical Cyan, Emerald, Soft Amber
+  const colors = [
+    { r: 56, g: 189, b: 248 },   // Cyan
+    { r: 45, g: 212, b: 191 },   // Teal
+    { r: 52, g: 211, b: 153 },   // Emerald
+    { r: 251, g: 191, b: 36 }    // Optic Amber
+  ];
+
+  // Neural Node Class
+  class Node {
+    constructor() {
+      this.reset(true);
+    }
+
+    reset(initial) {
+      this.x = initial ? Math.random() * width : (Math.random() > 0.5 ? 0 : width);
+      this.y = initial ? Math.random() * height : Math.random() * height;
+      this.vx = (Math.random() - 0.5) * 0.65;
+      this.vy = (Math.random() - 0.5) * 0.65;
+      this.radius = Math.random() * 2.2 + 1.2;
+      this.color = colors[Math.floor(Math.random() * colors.length)];
+      this.baseAlpha = Math.random() * 0.45 + 0.35;
+      this.pulse = Math.random() * Math.PI * 2;
+      this.pulseSpeed = 0.02 + Math.random() * 0.02;
+    }
+
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      this.pulse += this.pulseSpeed;
+
+      // Mouse interactive slight attraction
+      if (mouse.active) {
+        const dx = mouse.x - this.x;
+        const dy = mouse.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 140 && dist > 5) {
+          const force = (140 - dist) / 140 * 0.015;
+          this.x += dx * force;
+          this.y += dy * force;
+        }
+      }
+
+      // Screen wrapping
+      if (this.x < -10) this.x = width + 10;
+      if (this.x > width + 10) this.x = -10;
+      if (this.y < -10) this.y = height + 10;
+      if (this.y > height + 10) this.y = -10;
+    }
+
+    draw() {
+      const alpha = this.baseAlpha + Math.sin(this.pulse) * 0.15;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${Math.max(0.1, alpha)})`;
+      ctx.fill();
+
+      // Outer soft glow for larger nodes
+      if (this.radius > 2.0) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 2.4, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha * 0.25})`;
+        ctx.fill();
+      }
+    }
+  }
+
+  // Optical Coherence Scanner Wave Pulse
+  class ScanWave {
+    constructor() {
+      this.radius = 0;
+      this.maxRadius = 380;
+      this.speed = 1.6;
+      this.alpha = 0.55;
+      this.active = true;
+      this.originX = width * 0.75;
+      this.originY = height * 0.45;
+    }
+
+    update() {
+      this.radius += this.speed;
+      this.alpha = Math.max(0, 0.55 * (1 - this.radius / this.maxRadius));
+      if (this.radius >= this.maxRadius) {
+        this.radius = 0;
+        this.alpha = 0.55;
+        this.originX = width * (0.65 + Math.random() * 0.2);
+        this.originY = height * (0.35 + Math.random() * 0.3);
+      }
+    }
+
+    draw() {
+      if (this.alpha <= 0.01) return;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(this.originX, this.originY, this.radius, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(56, 189, 248, ${this.alpha * 0.6})`;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 6]);
+      ctx.stroke();
+
+      // Inner subtle glow wave
+      ctx.beginPath();
+      ctx.arc(this.originX, this.originY, Math.max(0, this.radius - 8), 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(45, 212, 191, ${this.alpha * 0.35})`;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([]);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  let nodes = [];
+  let scanWave = null;
+  const nodeCount = 42;
+
+  function resizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = hero.clientWidth;
+    height = hero.clientHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.scale(dpr, dpr);
+
+    if (nodes.length === 0) {
+      for (let i = 0; i < nodeCount; i++) {
+        nodes.push(new Node());
+      }
+      scanWave = new ScanWave();
+    }
+  }
+
+  function animate() {
+    if (!isVisible) return;
+
+    ctx.clearRect(0, 0, width, height);
+
+    // 1. Draw Optical Scan Wave
+    if (scanWave) {
+      scanWave.update();
+      scanWave.draw();
+    }
+
+    // 2. Draw Synaptic Connecting Lines
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[i].x - nodes[j].x;
+        const dy = nodes[i].y - nodes[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 115) {
+          const alpha = (1 - dist / 115) * 0.28;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = `rgba(56, 189, 248, ${alpha})`;
+          ctx.lineWidth = 0.9;
+          ctx.stroke();
+        }
+      }
+
+      // Mouse interactive beam to closest nodes
+      if (mouse.active) {
+        const mdx = nodes[i].x - mouse.x;
+        const mdy = nodes[i].y - mouse.y;
+        const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mdist < 130) {
+          const mAlpha = (1 - mdist / 130) * 0.45;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(mouse.x, mouse.y);
+          ctx.strokeStyle = `rgba(52, 211, 153, ${mAlpha})`;
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // 3. Update & Draw Nodes
+    for (let i = 0; i < nodes.length; i++) {
+      nodes[i].update();
+      nodes[i].draw();
+    }
+
+    animationId = requestAnimationFrame(animate);
+  }
+
+  // Handle visibility to save battery/CPU when user scrolls down
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      isVisible = entry.isIntersecting;
+      if (isVisible && !animationId) {
+        animate();
+      } else if (!isVisible && animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+    });
+  }, { threshold: 0.1 });
+
+  observer.observe(hero);
+
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+  });
+
+  // Init
+  resizeCanvas();
+  animate();
+})();
+</script>
 {% endblock %}
