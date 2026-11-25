@@ -126,7 +126,8 @@ def populate_seed_data():
     hospitals_data = [
         {
             "name": "Narayana Nethralaya",
-            "email": "contact@narayananethralaya.org",
+            "email": "hospital1@eyecare.com",
+            "alt_email": "contact@narayananethralaya.org",
             "city": "Bengaluru",
             "address": "121/C, Chord Road, 1st R Block, Rajajinagar, Bengaluru, Karnataka 560010",
             "phone": "+91 80 6612 1641",
@@ -257,6 +258,13 @@ def populate_seed_data():
             )
             db.session.add(hospital)
             db.session.flush()
+
+            if "alt_email" in hdata:
+                alt_u = User.query.filter_by(email=hdata["alt_email"]).first()
+                if not alt_u:
+                    alt_u = User(name=hdata["name"], email=hdata["alt_email"], role="hospital")
+                    alt_u.set_password("Hospital@123")
+                    db.session.add(alt_u)
 
             # Add procedures and prices
             for proc_name, (pmin, pmax) in hdata["procedures"].items():

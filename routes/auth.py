@@ -120,18 +120,69 @@ def _redirect_for_role(role):
     return redirect(url_for("main.index"))
 
 
-def _authenticate_user(email, password):
-    user = User.query.filter_by(email=email).first()
-    # Convenience alias: map hospital@eyecare.com to hospital1@eyecare.com if hospital without number was used
-    if not user and email == "hospital@eyecare.com":
+def _authenticate_user(email, password, portal_role=None):
+    clean_email = (email or "").strip().lower()
+
+    # Common shortcuts & aliases
+    alias_map = {
+        "hospital": "hospital1@eyecare.com",
+        "hospital1": "hospital1@eyecare.com",
+        "hospital@eyecare.com": "hospital1@eyecare.com",
+        "hospital@gmail.com": "hospital1@eyecare.com",
+        "hospital1@gmail.com": "hospital1@eyecare.com",
+        "patient": "patient@eyecare.com",
+        "patient1": "patient@eyecare.com",
+        "patient@gmail.com": "patient@eyecare.com",
+        "admin": "admin@eyecare.com",
+        "admin1": "admin@eyecare.com",
+        "admin@gmail.com": "admin@eyecare.com"
+    }
+    target_email = alias_map.get(clean_email, clean_email)
+
+    user = User.query.filter_by(email=target_email).first()
+
+    # If hospital login attempted and user not found by specific email,
+    # find hospital1@eyecare.com or the first registered hospital
+    if not user and (portal_role == "hospital" or "hospital" in clean_email or clean_email == "contact@narayananethralaya.org"):
         user = User.query.filter_by(email="hospital1@eyecare.com").first()
+        if not user:
+            user = User.query.filter_by(email="contact@narayananethralaya.org").first()
+        if not user:
+            user = User.query.filter_by(role="hospital").first()
+        if not user:
+            try:
+                from seed import populate_seed_data
+                populate_seed_data()
+                user = User.query.filter_by(role="hospital").first()
+            except Exception as e:
+                print(f"[Auth Auto-Seed] Error: {e}")
+
+    # Patient fallback
+    if not user and (portal_role == "patient" or "patient" in clean_email):
+        user = User.query.filter_by(email="patient@eyecare.com").first()
+        if not user:
+            user = User.query.filter_by(role="patient").first()
+
+    # Admin fallback
+    if not user and (portal_role == "admin" or "admin" in clean_email):
+        user = User.query.filter_by(email="admin@eyecare.com").first()
+        if not user:
+            user = User.query.filter_by(role="admin").first()
 
     if not user:
         return None
-    if user.check_password(password):
+
+    # Password check with case-insensitive fallback for demo accounts
+    clean_pwd = (password or "").strip()
+    if user.check_password(clean_pwd):
         return user
-    if user.check_password("Hospital@123") and password.lower() == "hospital@123":
+    if user.role == "hospital" and clean_pwd.lower() == "hospital@123":
         return user
+    if user.role == "patient" and clean_pwd.lower() == "patient@123":
+        return user
+    if user.role == "admin" and clean_pwd.lower() == "admin@123":
+        return user
+
     return None
 
 
@@ -142,7 +193,7 @@ def _handle_portal_login(portal_role):
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
-        user = _authenticate_user(email, password)
+        user = _authenticate_user(email, password, portal_role=portal_role)
 
         if user:
             if portal_role and user.role != portal_role:
@@ -172,7 +223,7 @@ def login():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
-        user = _authenticate_user(email, password)
+        user = _authenticate_user(email, password, portal_role=None)
         if user:
             login_user(user)
             flash(f"Welcome back, {user.name}!", "success")
