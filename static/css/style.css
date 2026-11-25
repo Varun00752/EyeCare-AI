@@ -123,12 +123,12 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--primary-teal) !important;
 }
 
-/* Modern Glass Navbar */
+/* Modern Glass Navbar (Blends with light-blue motion background) */
 .navbar {
-  background: rgba(255, 255, 255, 0.94) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border-light) !important;
+  background: rgba(226, 242, 253, 0.72) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(14, 165, 233, 0.16) !important;
   transition: all 0.25s ease;
   z-index: 1030;
 }
@@ -176,13 +176,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Premium Card System with Glassmorphic Translucency */
-.card {
-  border: 1px solid rgba(226, 232, 240, 0.85);
+.card, .card.bg-white {
+  border: 1px solid rgba(186, 230, 253, 0.65) !important;
   border-radius: var(--radius-md);
-  background-color: var(--surface-card);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 4px 20px -2px rgba(14, 116, 144, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03);
+  background-color: rgba(255, 255, 255, 0.84) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px -2px rgba(14, 116, 144, 0.06), 0 1px 3px rgba(15, 23, 42, 0.03);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
 }
 
@@ -375,10 +375,10 @@ h1, h2, h3, h4, h5, h6 {
 .footer-disclaimer {
   font-size: 0.88rem;
   color: var(--text-muted);
-  background-color: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-top: 1px solid var(--border-light);
+  background-color: rgba(226, 242, 253, 0.68);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(14, 165, 233, 0.16);
   margin-top: auto;
 }
 
