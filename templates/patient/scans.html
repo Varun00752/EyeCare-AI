@@ -40,11 +40,11 @@
                   <td><strong>#{{ scan.id }}</strong></td>
                   <td>{{ scan.created_at.strftime('%d %b %Y, %I:%M %p') }}</td>
                   <td>
-                    <img src="{{ url_for('static', filename='uploads/' + scan.image_path) }}" alt="Thumbnail" class="rounded border" style="width: 50px; height: 50px; object-fit: cover;">
+                    <img src="{{ url_for('serve_upload', filename=scan.image_path) }}" alt="Thumbnail" class="rounded border" style="width: 50px; height: 50px; object-fit: cover;">
                   </td>
                   <td>
                     {% if scan.heatmap_path %}
-                      <img src="{{ url_for('static', filename='heatmaps/' + scan.heatmap_path) }}" alt="Heatmap" class="rounded border" style="width: 50px; height: 50px; object-fit: cover;">
+                      <img src="{{ url_for('serve_heatmap', filename=scan.heatmap_path) }}" alt="Heatmap" class="rounded border" style="width: 50px; height: 50px; object-fit: cover;">
                     {% else %}
                       <span class="text-muted small">N/A</span>
                     {% endif %}

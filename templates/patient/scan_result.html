@@ -50,14 +50,14 @@
           <div class="col-6 text-center">
             <div class="p-2 border rounded bg-light">
               <div class="small fw-semibold text-muted mb-2">Original Fundus Image</div>
-              <img src="{{ url_for('static', filename='uploads/' + scan.image_path) }}" alt="Original Fundus" class="img-fluid rounded" style="max-height: 220px; object-fit: contain;">
+              <img src="{{ url_for('serve_upload', filename=scan.image_path) }}" alt="Original Fundus" class="img-fluid rounded" style="max-height: 220px; object-fit: contain;">
             </div>
           </div>
           <div class="col-6 text-center">
             <div class="p-2 border rounded bg-light">
               <div class="small fw-semibold text-muted mb-2">Grad-CAM Heatmap Overlay</div>
               {% if scan.heatmap_path %}
-                <img src="{{ url_for('static', filename='heatmaps/' + scan.heatmap_path) }}" alt="Grad-CAM Heatmap" class="img-fluid rounded" style="max-height: 220px; object-fit: contain;">
+                <img src="{{ url_for('serve_heatmap', filename=scan.heatmap_path) }}" alt="Grad-CAM Heatmap" class="img-fluid rounded" style="max-height: 220px; object-fit: contain;">
               {% else %}
                 <div class="text-muted p-4 small">Heatmap not available</div>
               {% endif %}
