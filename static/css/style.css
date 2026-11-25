@@ -23,9 +23,9 @@
   --accent-coral: #ea580c;
 
   /* Neutral Surface & Typography */
-  --bg-page: #edf6fc;
-  --surface-card: rgba(255, 255, 255, 0.94);
-  --surface-muted: #f1f8fc;
+  --bg-page: #ffffff;
+  --surface-card: #ffffff;
+  --surface-muted: #f8fafc;
   --border-light: #e2e8f0;
   --border-medium: #cbd5e1;
 
@@ -47,65 +47,16 @@
   --radius-pill: 9999px;
 }
 
-/* Base Document Styles with Global Ambient Motion Canvas */
-html {
-  background-color: #e8f4fc;
-}
-
+/* Base Document Styles */
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  background-color: transparent;
+  background-color: var(--bg-page);
   color: var(--text-secondary);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  position: relative;
-}
-
-/* ==========================================================================
-   Global Ambient Motion Background (Uniform Light-Blue Animated Aesthetic)
-   ========================================================================== */
-.global-motion-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-  z-index: -1;
-  overflow: hidden;
-  background: linear-gradient(-45deg, #e1f1fd, #eaf6fc, #dcf2f9, #e5f5f8);
-  background-size: 300% 300%;
-  animation: globalGradientFlow 16s ease infinite;
-}
-
-@keyframes globalGradientFlow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* Subtle Geometric Medical Tech Grid */
-.global-grid-pattern {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: radial-gradient(rgba(2, 132, 199, 0.08) 1px, transparent 1px);
-  background-size: 32px 32px;
-  opacity: 0.7;
-}
-
-#globalBgCanvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
 }
 
 .main-content {
@@ -123,12 +74,12 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--primary-teal) !important;
 }
 
-/* Modern Glass Navbar (Blends with light-blue motion background) */
+/* Modern Glass Navbar */
 .navbar {
-  background: rgba(226, 242, 253, 0.72) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(14, 165, 233, 0.16) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-light) !important;
   transition: all 0.25s ease;
   z-index: 1030;
 }
@@ -175,14 +126,12 @@ h1, h2, h3, h4, h5, h6 {
   color: white;
 }
 
-/* Premium Card System with Glassmorphic Translucency */
+/* Premium Card System */
 .card, .card.bg-white {
-  border: 1px solid rgba(186, 230, 253, 0.65) !important;
+  border: 1px solid var(--border-light) !important;
   border-radius: var(--radius-md);
-  background-color: rgba(255, 255, 255, 0.84) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 20px -2px rgba(14, 116, 144, 0.06), 0 1px 3px rgba(15, 23, 42, 0.03);
+  background-color: var(--surface-card) !important;
+  box-shadow: var(--shadow-card);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
 }
 
@@ -371,14 +320,12 @@ h1, h2, h3, h4, h5, h6 {
   background-color: #f8fafc;
 }
 
-/* Clean Glass Footer */
+/* Clean Footer */
 .footer-disclaimer {
   font-size: 0.88rem;
   color: var(--text-muted);
-  background-color: rgba(226, 242, 253, 0.68);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(14, 165, 233, 0.16);
+  background-color: #ffffff;
+  border-top: 1px solid var(--border-light);
   margin-top: auto;
 }
 
