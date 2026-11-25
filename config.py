@@ -34,6 +34,6 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # 5 MB file size limit
-    MAX_CONTENT_LENGTH = 5 * 1024 * 1024
+    # 10 MB file size limit
+    MAX_CONTENT_LENGTH = 10 * 1024 * 1024
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}

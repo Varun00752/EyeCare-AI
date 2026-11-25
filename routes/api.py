@@ -31,7 +31,7 @@ def api_predict():
     file_size = file.tell()
     file.seek(0)
     if file_size > current_app.config["MAX_CONTENT_LENGTH"]:
-        return jsonify({"error": "File size exceeds 5 MB limit."}), 400
+        return jsonify({"error": "File size exceeds 10 MB limit."}), 400
 
     ext = file.filename.rsplit(".", 1)[1].lower()
     unique_filename = f"{uuid.uuid4().hex}.{ext}"
@@ -205,7 +205,7 @@ def api_chat():
     if uploaded_file and uploaded_file.filename:
         if not allowed_file(uploaded_file.filename):
             return jsonify({
-                "reply": "Please upload a valid retinal fundus image in **PNG, JPG, or JPEG** format (under 5 MB)."
+                "reply": "Please upload a valid retinal fundus image in **PNG, JPG, or JPEG** format (under 10 MB)."
             })
 
         ext = uploaded_file.filename.rsplit(".", 1)[1].lower()
@@ -334,7 +334,7 @@ def api_chat():
                 "**How to Get a Retinal Fundus Image:**\n"
                 "1. **Visit an Eye Clinic or Optometrist:** Ask for a *digital retinal fundus photograph* (captured with a non-mydriatic fundus camera — painless and takes ~2 minutes).\n"
                 "2. **Diabetes & Ophthalmology Centers:** Most specialty eye hospitals (listed in our Hospitals directory) offer fundus photography during routine DR screening.\n"
-                "3. **Request a Digital Copy:** Ask the clinic to email or share the `.jpg` or `.png` image file (under 5 MB).\n"
+                "3. **Request a Digital Copy:** Ask the clinic to email or share the `.jpg` or `.png` image file (under 10 MB).\n"
                 "4. **Image Tips:** Make sure it shows the circular orange-red retina with dark corners and clear focus (avoid phone screenshots of a blurry monitor)."
             ),
             "actions": [

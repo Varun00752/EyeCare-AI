@@ -49,12 +49,12 @@ def scan_new():
             flash("Invalid file format. Allowed formats: PNG, JPG, JPEG.", "danger")
             return redirect(request.url)
 
-        # Server-side validation: 5 MB size limit
+        # Server-side validation: 10 MB size limit
         file.seek(0, os.SEEK_END)
         file_size = file.tell()
         file.seek(0)
         if file_size > current_app.config["MAX_CONTENT_LENGTH"]:
-            flash(f"File too large ({(file_size / (1024*1024)):.2f} MB). Maximum allowed size is 5 MB.", "danger")
+            flash(f"File too large ({(file_size / (1024*1024)):.2f} MB). Maximum allowed size is 10 MB.", "danger")
             return redirect(request.url)
 
         # Secure unique filename

@@ -66,7 +66,7 @@ def create_app(config_class=Config):
 
     @app.errorhandler(413)
     def request_entity_too_large(e):
-        flash("File is too large. Maximum allowed size is 5 MB.", "danger")
+        flash("File is too large. Maximum allowed size is 10 MB.", "danger")
         return redirect(request.referrer or "/")
 
     # Ensure database schema is created and auto-seed if empty
