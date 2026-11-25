@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Select Portal — EyeCare AI{% endblock %}
+
+{% block head %}
+<style>
+  .portal-card {
+    border: 1px solid var(--border-light);
+    border-radius: 18px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    overflow: hidden;
+    background: #fff;
+  }
+  .portal-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 35px -10px rgba(15, 23, 42, 0.14);
+  }
+  .portal-banner-patient {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+  }
+  .portal-banner-hospital {
+    background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 65%, #1e3a8a 100%);
+  }
+  .portal-banner-admin {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 65%, #334155 100%);
+  }
+  .portal-subtitle {
+    color: #ffffff;
+  }
+  .portal-icon-ring {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(8px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: #fff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="text-center mb-5">
+    <span class="badge rounded-pill px-3 py-2 mb-2" style="background: var(--primary-teal-subtle); color: var(--primary-teal-dark); border: 1px solid var(--primary-teal-border);">
+      <i class="bi bi-shield-check me-1"></i> Role-Based Access Portals
+    </span>
+    <h2 class="display-6 fw-bold text-dark mb-2">Choose Your Sign In Portal</h2>
+    <p class="mx-auto" style="max-width: 560px; color: #334155;">
+      Select your account type below to access your dedicated EyeCare workspace.
+    </p>
+  </div>
+
+  <div class="row g-4 justify-content-center">
+    <!-- Patient Portal Card -->
+    <div class="col-md-6 col-lg-4">
+      <div class="portal-card h-100 d-flex flex-column">
+        <div class="portal-banner-patient p-4 text-white">
+          <div class="portal-icon-ring mb-3">
+            <i class="bi bi-heart-pulse"></i>
+          </div>
+          <h4 class="fw-bold text-white mb-1">Patient Portal</h4>
+          <p class="small portal-subtitle mb-0">Retinal scans, reports &amp; bookings</p>
+        </div>
+        <div class="p-4 d-flex flex-column flex-grow-1">
+          <ul class="list-unstyled small text-secondary mb-4 flex-grow-1">
+            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i>Upload fundus images &amp; view DR grades</li>
+            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i>Download clinical PDF scan reports</li>
+            <li><i class="bi bi-check2-circle text-success me-2"></i>Compare prices &amp; book eye specialists</li>
+          </ul>
+          <a href="{{ url_for('auth.login_patient', next=request.args.get('next', '')) }}" class="btn w-100 py-2 fw-semibold text-white" style="background: linear-gradient(135deg, #0f766e, #115e59);">
+            Sign In as Patient <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+          <div class="text-center mt-2">
+            <a href="{{ url_for('auth.register_patient') }}" class="small text-decoration-none text-secondary">New patient? Create account</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hospital Portal Card -->
+    <div class="col-md-6 col-lg-4">
+      <div class="portal-card h-100 d-flex flex-column">
+        <div class="portal-banner-hospital p-4 text-white">
+          <div class="portal-icon-ring mb-3">
+            <i class="bi bi-hospital"></i>
+          </div>
+          <h4 class="fw-bold text-white mb-1">Hospital Portal</h4>
+          <p class="small portal-subtitle mb-0">Clinics, pricing &amp; patient appointments</p>
+        </div>
+        <div class="p-4 d-flex flex-column flex-grow-1">
+          <ul class="list-unstyled small text-secondary mb-4 flex-grow-1">
+            <li class="mb-2"><i class="bi bi-check2-circle text-primary me-2"></i>Manage clinic profile &amp; verification</li>
+            <li class="mb-2"><i class="bi bi-check2-circle text-primary me-2"></i>Publish transparent procedure pricing</li>
+            <li><i class="bi bi-check2-circle text-primary me-2"></i>Confirm or reschedule patient visits</li>
+          </ul>
+          <a href="{{ url_for('auth.login_hospital', next=request.args.get('next', '')) }}" class="btn w-100 py-2 fw-semibold text-white" style="background: linear-gradient(135deg, #0369a1, #1d4ed8);">
+            Sign In as Hospital <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+          <div class="text-center mt-2">
+            <a href="{{ url_for('auth.register_hospital') }}" class="small text-decoration-none text-secondary">Partner clinic? Register hospital</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Console Card -->
+    <div class="col-md-6 col-lg-4">
+      <div class="portal-card h-100 d-flex flex-column">
+        <div class="portal-banner-admin p-4 text-white">
+          <div class="portal-icon-ring mb-3">
+            <i class="bi bi-shield-lock"></i>
+          </div>
+          <h4 class="fw-bold text-white mb-1">Admin Console</h4>
+          <p class="small portal-subtitle mb-0">Platform governance &amp; approvals</p>
+        </div>
+        <div class="p-4 d-flex flex-column flex-grow-1">
+          <ul class="list-unstyled small text-secondary mb-4 flex-grow-1">
+            <li class="mb-2"><i class="bi bi-check2-circle text-dark me-2"></i>Verify &amp; approve partner eye centers</li>
+            <li class="mb-2"><i class="bi bi-check2-circle text-dark me-2"></i>Maintain master ophthalmology procedures</li>
+            <li><i class="bi bi-check2-circle text-dark me-2"></i>Monitor platform users &amp; activity</li>
+          </ul>
+          <a href="{{ url_for('auth.login_admin', next=request.args.get('next', '')) }}" class="btn btn-dark w-100 py-2 fw-semibold">
+            Sign In as Admin <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+          <div class="text-center mt-2">
+            <span class="small text-secondary">Restricted system access</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% if portal_role == 'hospital' %}
+  {% set page_title = 'Hospital Portal Sign In' %}
+  {% set theme_class = 'theme-hospital' %}
+  {% set badge_icon = 'bi-hospital' %}
+  {% set badge_label = 'Partner Hospital Portal' %}
+  {% set hero_title = 'Manage Your Eye Center & Patient Care' %}
+  {% set hero_desc = 'Update transparent treatment pricing, review incoming retinal screening referrals, and manage clinical appointments in one place.' %}
+  {% set demo_email = 'hospital1@eyecare.com' %}
+  {% set demo_pass = 'Hospital@123' %}
+  {% set form_action = url_for('auth.login_hospital', next=request.args.get('next', '')) %}
+  {% set features = [
+    ('bi-tags', 'Transparent Pricing', 'Publish real procedure ranges across cataract, laser & anti-VEGF.'),
+    ('bi-calendar2-check', 'Appointment Queue', 'Confirm, complete, or reschedule incoming patient bookings.'),
+    ('bi-patch-check', 'Verified Network', 'Display your clinic in the public city-wide EyeCare directory.')
+  ] %}
+{% elif portal_role == 'admin' %}
+  {% set page_title = 'Admin Console Sign In' %}
+  {% set theme_class = 'theme-admin' %}
+  {% set badge_icon = 'bi-shield-lock-fill' %}
+  {% set badge_label = 'System Admin Console' %}
+  {% set hero_title = 'Platform Governance & Clinical Oversight' %}
+  {% set hero_desc = 'Verify newly registered eye hospitals, curate the master ophthalmology procedure catalog, and monitor network health.' %}
+  {% set demo_email = 'admin@eyecare.com' %}
+  {% set demo_pass = 'Admin@123' %}
+  {% set form_action = url_for('auth.login_admin', next=request.args.get('next', '')) %}
+  {% set features = [
+    ('bi-building-check', 'Hospital Approvals', 'Review credentials and approve or reject clinic listings.'),
+    ('bi-sliders', 'Master Procedures', 'Standardize eye care procedures and clinical categories.'),
+    ('bi-activity', 'System Telemetry', 'Track platform users, screenings, and appointment metrics.')
+  ] %}
+{% else %}
+  {% set page_title = 'Patient Portal Sign In' %}
+  {% set theme_class = 'theme-patient' %}
+  {% set badge_icon = 'bi-heart-pulse-fill' %}
+  {% set badge_label = 'Patient Care Portal' %}
+  {% set hero_title = 'Your Vision Health, Clear & Tracked' %}
+  {% set hero_desc = 'Access your diabetic retinopathy screening history, download Grad-CAM PDF reports, compare clinic prices, and book specialists.' %}
+  {% set demo_email = 'patient@eyecare.com' %}
+  {% set demo_pass = 'Patient@123' %}
+  {% set form_action = url_for('auth.login_patient', next=request.args.get('next', '')) %}
+  {% set features = [
+    ('bi-eye', 'Retinal Screening', 'Upload fundus images for 5-grade severity classification & heatmaps.'),
+    ('bi-file-earmark-medical', 'Clinical PDF Reports', 'Download structured screening summaries to share with doctors.'),
+    ('bi-geo-alt', 'Compare & Book', 'Find verified eye hospitals by city and procedure cost.')
+  ] %}
+{% endif %}
+
+{% block title %}{{ page_title }} — EyeCare AI{% endblock %}
+
+{% block head %}
+<style>
+  .auth-split-wrapper {
+    border-radius: 20px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.14);
+    border: 1px solid var(--border-light);
+  }
+
+  .auth-hero-panel {
+    position: relative;
+    color: #fff;
+    overflow: hidden;
+  }
+
+  .auth-hero-panel::before {
+    content: "";
+    position: absolute;
+    width: 340px;
+    height: 340px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    top: -120px;
+    right: -100px;
+    pointer-events: none;
+  }
+
+  .auth-hero-panel::after {
+    content: "";
+    position: absolute;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    bottom: -80px;
+    left: -60px;
+    pointer-events: none;
+  }
+
+  .theme-patient .auth-hero-panel {
+    background: linear-gradient(145deg, #0f766e 0%, #115e59 60%, #134e4a 100%);
+  }
+  .theme-patient .btn-portal {
+    background: linear-gradient(135deg, #0f766e, #115e59);
+    border: none;
+    color: #fff;
+  }
+  .theme-patient .btn-portal:hover {
+    background: linear-gradient(135deg, #115e59, #134e4a);
+    color: #fff;
+  }
+  .theme-patient .portal-accent { color: #0f766e; }
+
+  .theme-hospital .auth-hero-panel {
+    background: linear-gradient(145deg, #0369a1 0%, #1d4ed8 55%, #1e3a8a 100%);
+  }
+  .theme-hospital .btn-portal {
+    background: linear-gradient(135deg, #0369a1, #1d4ed8);
+    border: none;
+    color: #fff;
+  }
+  .theme-hospital .btn-portal:hover {
+    background: linear-gradient(135deg, #075985, #1e40af);
+    color: #fff;
+  }
+  .theme-hospital .portal-accent { color: #0369a1; }
+
+  .theme-admin .auth-hero-panel {
+    background: linear-gradient(145deg, #0f172a 0%, #1e293b 60%, #312e81 100%);
+  }
+  .theme-admin .btn-portal {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border: none;
+    color: #fff;
+  }
+  .theme-admin .btn-portal:hover {
+    background: linear-gradient(135deg, #1e293b, #334155);
+    color: #fff;
+  }
+  .theme-admin .portal-accent { color: #e11d48; }
+
+  .feature-pill-item {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    backdrop-filter: blur(6px);
+  }
+
+  .switcher-pill {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-medium);
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    background: #f8fafc;
+  }
+  .switcher-pill:hover {
+    background: #e2e8f0;
+    color: var(--text-primary);
+  }
+  .switcher-pill.active {
+    background: #0f172a;
+    color: #fff;
+    border-color: #0f172a;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+  <div class="row justify-content-center">
+    <div class="col-xl-10">
+      <div class="auth-split-wrapper {{ theme_class }}">
+        <div class="row g-0">
+          <!-- Left Visual Showcase Panel -->
+          <div class="col-lg-6 auth-hero-panel p-4 p-md-5 d-flex flex-column justify-content-between">
+            <div class="position-relative" style="z-index: 2;">
+              <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-4" style="background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.25);">
+                <i class="bi {{ badge_icon }}"></i>
+                <span class="small fw-semibold">{{ badge_label }}</span>
+              </div>
+
+              <h2 class="fw-bold text-white mb-3" style="font-size: 1.85rem;">{{ hero_title }}</h2>
+              <p class="mb-4" style="color: rgba(255, 255, 255, 0.92);">{{ hero_desc }}</p>
+
+              <div class="d-flex flex-column gap-3">
+                {% for icon, title, desc in features %}
+                <div class="feature-pill-item d-flex align-items-start gap-3">
+                  <div class="rounded-2 p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; flex-shrink: 0; background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.25);">
+                    <i class="bi {{ icon }} text-white"></i>
+                  </div>
+                  <div>
+                    <div class="fw-semibold text-white small">{{ title }}</div>
+                    <div style="font-size: 0.78rem; color: rgba(255, 255, 255, 0.92);">{{ desc }}</div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-top border-white border-opacity-10 position-relative" style="z-index: 2;">
+              <a href="{{ url_for('auth.login') }}" class="text-decoration-none small" style="color: rgba(255, 255, 255, 0.92);">
+                <i class="bi bi-grid me-1"></i> View all portals
+              </a>
+            </div>
+          </div>
+
+          <!-- Right Sign-In Form Panel -->
+          <div class="col-lg-6 p-4 p-md-5 bg-white d-flex flex-column justify-content-center">
+            <div class="mb-4">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <h3 class="fw-bold mb-0">{{ page_title }}</h3>
+                <i class="bi {{ badge_icon }} fs-3 portal-accent"></i>
+              </div>
+              <p class="text-muted small mb-0">Enter your credentials to continue to your dashboard.</p>
+            </div>
+
+            <form method="POST" action="{{ form_action }}" id="portalLoginForm">
+              <div class="mb-3">
+                <label for="email" class="form-label fw-semibold small text-uppercase text-muted">Email Address</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light"><i class="bi bi-envelope text-muted"></i></span>
+                  <input type="email" class="form-control" id="email" name="email" placeholder="{{ demo_email }}" required autofocus>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="password" class="form-label fw-semibold small text-uppercase text-muted">Password</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light"><i class="bi bi-lock text-muted"></i></span>
+                  <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                  <button class="btn btn-outline-secondary" type="button" id="togglePasswordBtn" title="Show/Hide Password">
+                    <i class="bi bi-eye" id="togglePasswordIcon"></i>
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-portal w-100 py-2 fw-semibold shadow-sm mb-3">
+                Sign In to {{ portal_role|title }} Portal <i class="bi bi-arrow-right ms-1"></i>
+              </button>
+            </form>
+
+            <!-- 1-Click Demo Credentials Box -->
+            <div class="p-3 rounded-3 bg-light border mb-4">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="small fw-bold text-dark"><i class="bi bi-key me-1 portal-accent"></i> Demo Account</span>
+                <button type="button" class="btn btn-sm btn-outline-dark py-1 px-3" style="font-size: 0.78rem;" onclick="fillDemoCredentials()">
+                  <i class="bi bi-magic me-1"></i> Auto-Fill
+                </button>
+              </div>
+              <div class="small text-muted font-monospace" style="font-size: 0.78rem;">
+                <div>Email: <span class="text-dark fw-semibold">{{ demo_email }}</span></div>
+                <div>Pass: <span class="text-dark fw-semibold">{{ demo_pass }}</span></div>
+              </div>
+            </div>
+
+            {% if portal_role == 'patient' %}
+              <div class="text-center small text-muted mb-3">
+                New to EyeCare? <a href="{{ url_for('auth.register_patient') }}" class="fw-semibold text-decoration-none portal-accent">Create Patient Account</a>
+              </div>
+            {% elif portal_role == 'hospital' %}
+              <div class="text-center small text-muted mb-3">
+                Want to join our network? <a href="{{ url_for('auth.register_hospital') }}" class="fw-semibold text-decoration-none portal-accent">Register Your Hospital</a>
+              </div>
+            {% endif %}
+
+            <!-- Quick Portal Switcher -->
+            <div class="pt-3 border-top">
+              <div class="small text-muted text-center mb-2">Switch Sign-In Portal:</div>
+              <div class="d-flex flex-wrap justify-content-center gap-2">
+                <a href="{{ url_for('auth.login_patient') }}" class="switcher-pill {% if portal_role == 'patient' %}active{% endif %}">
+                  <i class="bi bi-heart-pulse me-1"></i>Patient
+                </a>
+                <a href="{{ url_for('auth.login_hospital') }}" class="switcher-pill {% if portal_role == 'hospital' %}active{% endif %}">
+                  <i class="bi bi-hospital me-1"></i>Hospital
+                </a>
+                <a href="{{ url_for('auth.login_admin') }}" class="switcher-pill {% if portal_role == 'admin' %}active{% endif %}">
+                  <i class="bi bi-shield-lock me-1"></i>Admin
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function fillDemoCredentials() {
+    document.getElementById('email').value = "{{ demo_email }}";
+    document.getElementById('password').value = "{{ demo_pass }}";
+  }
+
+  document.getElementById('togglePasswordBtn').addEventListener('click', function () {
+    const pwdInput = document.getElementById('password');
+    const icon = document.getElementById('togglePasswordIcon');
+    if (pwdInput.type === 'password') {
+      pwdInput.type = 'text';
+      icon.classList.remove('bi-eye');
+      icon.classList.add('bi-eye-slash');
+    } else {
+      pwdInput.type = 'password';
+      icon.classList.remove('bi-eye-slash');
+      icon.classList.add('bi-eye');
+    }
+  });
+</script>
+{% endblock %}

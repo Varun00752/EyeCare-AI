@@ -91,8 +91,17 @@
               </ul>
             </li>
           {% else %}
-            <li class="nav-item">
-              <a class="nav-link fw-semibold" href="{{ url_for('auth.login') }}"><i class="bi bi-box-arrow-in-right me-1"></i>Sign In</a>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle fw-semibold" href="#" id="loginDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-box-arrow-in-right me-1"></i>Sign In
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2 mt-2" aria-labelledby="loginDropdown">
+                <li><a class="dropdown-item rounded-2" href="{{ url_for('auth.login_patient') }}"><i class="bi bi-heart-pulse text-teal me-2"></i>Patient Login</a></li>
+                <li><a class="dropdown-item rounded-2" href="{{ url_for('auth.login_hospital') }}"><i class="bi bi-hospital text-primary me-2"></i>Hospital Login</a></li>
+                <li><a class="dropdown-item rounded-2" href="{{ url_for('auth.login_admin') }}"><i class="bi bi-shield-lock text-danger me-2"></i>Admin Login</a></li>
+                <li><hr class="dropdown-divider my-2"></li>
+                <li><a class="dropdown-item rounded-2 small text-muted" href="{{ url_for('auth.login') }}"><i class="bi bi-grid me-2"></i>All Portals</a></li>
+              </ul>
             </li>
             <li class="nav-item dropdown ms-lg-2">
               <a class="btn btn-sm btn-primary dropdown-toggle px-3" href="#" id="registerDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -169,8 +178,285 @@
     </div>
   </footer>
 
+  <!-- Floating EyeCare Assistant Chatbot -->
+  <style>
+    .eyecare-fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 1050;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0f766e, #115e59);
+      border: 2px solid #ffffff;
+      box-shadow: 0 10px 25px rgba(15, 118, 110, 0.38);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .eyecare-fab:hover {
+      transform: scale(1.07);
+      box-shadow: 0 14px 30px rgba(15, 118, 110, 0.48);
+    }
+    .eyecare-fab-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #0369a1;
+      color: #ffffff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 2px solid #ffffff;
+    }
+    .eyecare-chat-drawer {
+      position: fixed;
+      bottom: 96px;
+      right: 24px;
+      z-index: 1050;
+      width: 375px;
+      max-width: calc(100vw - 32px);
+      height: 520px;
+      max-height: calc(100vh - 120px);
+      background: #ffffff;
+      border-radius: 18px;
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 24px 50px rgba(15, 23, 42, 0.22);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .eyecare-chat-drawer.open {
+      display: flex;
+    }
+    .eyecare-chat-header {
+      background: linear-gradient(135deg, #0f766e, #115e59);
+      color: #ffffff;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .eyecare-chat-messages {
+      flex: 1;
+      padding: 14px;
+      overflow-y: auto;
+      background: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .chat-bubble {
+      max-width: 86%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 0.86rem;
+      line-height: 1.45;
+      word-wrap: break-word;
+    }
+    .chat-bubble.bot {
+      align-self: flex-start;
+      background: #ffffff;
+      color: #0f172a;
+      border: 1px solid #e2e8f0;
+      border-bottom-left-radius: 4px;
+    }
+    .chat-bubble.user {
+      align-self: flex-end;
+      background: #0f766e;
+      color: #ffffff;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-chips {
+      padding: 8px 12px;
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .chat-chip {
+      font-size: 0.8rem;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #0f172a;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .chat-chip:hover {
+      background: #e2e8f0;
+    }
+    .eyecare-chat-input-area {
+      padding: 10px 12px;
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+
+  <button type="button" class="eyecare-fab" id="eyecareChatToggle" aria-label="Open EyeCare Assistant">
+    <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="EyeCare Assistant" width="34" height="34" class="rounded-circle">
+    <span class="eyecare-fab-badge">Help</span>
+  </button>
+
+  <div class="eyecare-chat-drawer" id="eyecareChatDrawer" role="dialog" aria-label="EyeCare Assistant Chat">
+    <div class="eyecare-chat-header">
+      <div class="d-flex align-items-center gap-2">
+        <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Logo" width="30" height="30" class="rounded-2 bg-white p-1">
+        <div>
+          <div class="fw-bold small mb-0">EyeCare Assistant</div>
+          <div style="font-size: 0.78rem; color: #ffffff;">Reports, fundus guide &amp; next steps</div>
+        </div>
+      </div>
+      <button type="button" class="btn btn-sm text-white p-1" id="eyecareChatClose" aria-label="Close chat">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="eyecare-chat-messages" id="eyecareChatMessages">
+      <div class="chat-bubble bot">
+        Hi! I can help you:<br>
+        &bull; <strong>Analyze your scan report</strong> (or attach a retinal photo)<br>
+        &bull; Tell you <strong>what to do next</strong><br>
+        &bull; Explain <strong>how to get a fundus retinal image</strong><br>
+        &bull; Answer basic Diabetic Retinopathy questions
+      </div>
+    </div>
+
+    <div class="chat-chips">
+      <button type="button" class="chat-chip" onclick="sendQuickPrompt('Analyze my latest report')">Analyze my report</button>
+      <button type="button" class="chat-chip" onclick="sendQuickPrompt('What should I do next?')">What to do next?</button>
+      <button type="button" class="chat-chip" onclick="sendQuickPrompt('How to get a fundus retinal image?')">Get fundus image</button>
+      <button type="button" class="chat-chip" onclick="sendQuickPrompt('What do DR grades mean?')">DR grades</button>
+    </div>
+
+    <form class="eyecare-chat-input-area" id="eyecareChatForm">
+      <input type="file" id="eyecareChatFile" accept="image/png,image/jpeg" class="d-none">
+      <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-2" id="eyecareChatAttachBtn" title="Upload retinal fundus image">
+        <i class="bi bi-paperclip"></i>
+      </button>
+      <input type="text" class="form-control form-control-sm py-2" id="eyecareChatInput" placeholder="Ask a question or paste report..." autocomplete="off">
+      <button type="submit" class="btn btn-sm text-white px-3 py-2" style="background: #0f766e;" aria-label="Send message">
+        <i class="bi bi-send-fill"></i>
+      </button>
+    </form>
+  </div>
+
   <!-- Bootstrap 5 JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    (function () {
+      const toggleBtn = document.getElementById('eyecareChatToggle');
+      const closeBtn = document.getElementById('eyecareChatClose');
+      const drawer = document.getElementById('eyecareChatDrawer');
+      const form = document.getElementById('eyecareChatForm');
+      const input = document.getElementById('eyecareChatInput');
+      const fileInput = document.getElementById('eyecareChatFile');
+      const attachBtn = document.getElementById('eyecareChatAttachBtn');
+      const messagesEl = document.getElementById('eyecareChatMessages');
+
+      toggleBtn.addEventListener('click', () => {
+        drawer.classList.toggle('open');
+        if (drawer.classList.contains('open')) input.focus();
+      });
+
+      closeBtn.addEventListener('click', () => drawer.classList.remove('open'));
+      attachBtn.addEventListener('click', () => fileInput.click());
+
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+          sendChatMessage('Analyze this retinal image', fileInput.files[0]);
+          fileInput.value = '';
+        }
+      });
+
+      function formatBotText(text) {
+        return text
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+          .replace(/\n/g, '<br>');
+      }
+
+      function appendBubble(text, sender, actions) {
+        const div = document.createElement('div');
+        div.className = 'chat-bubble ' + sender;
+        div.innerHTML = sender === 'bot' ? formatBotText(text) : text.replace(/</g, '&lt;');
+
+        if (actions && actions.length > 0) {
+          const actWrap = document.createElement('div');
+          actWrap.className = 'd-flex flex-wrap gap-2 mt-2';
+          actions.forEach(a => {
+            const link = document.createElement('a');
+            link.href = a.url;
+            link.className = 'btn btn-sm py-1 px-2 text-white';
+            link.style.background = '#0f766e';
+            link.style.fontSize = '0.75rem';
+            link.textContent = a.label;
+            actWrap.appendChild(link);
+          });
+          div.appendChild(actWrap);
+        }
+
+        messagesEl.appendChild(div);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      async function sendChatMessage(msg, fileObj) {
+        if (!msg && !fileObj) return;
+        appendBubble(fileObj ? 'Uploaded image: ' + fileObj.name : msg, 'user');
+
+        const typing = document.createElement('div');
+        typing.className = 'chat-bubble bot text-secondary';
+        typing.textContent = 'Analyzing...';
+        messagesEl.appendChild(typing);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+
+        try {
+          let res;
+          if (fileObj) {
+            const fd = new FormData();
+            fd.append('message', msg || '');
+            fd.append('file', fileObj);
+            res = await fetch('/api/chat', { method: 'POST', body: fd });
+          } else {
+            res = await fetch('/api/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message: msg })
+            });
+          }
+          const data = await res.json();
+          typing.remove();
+          appendBubble(data.reply || 'Sorry, I could not process that.', 'bot', data.actions);
+        } catch (err) {
+          typing.remove();
+          appendBubble('Connection error. Please try again.', 'bot');
+        }
+      }
+
+      window.sendQuickPrompt = function (text) {
+        sendChatMessage(text, null);
+      };
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        sendChatMessage(text, null);
+      });
+    })();
+  </script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

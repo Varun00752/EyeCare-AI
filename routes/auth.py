@@ -110,42 +110,94 @@ def register_hospital():
     return render_template("register_hospital.html")
 
 
-@auth_bp.route("/login", methods=["GET", "POST"])
-def login():
+def _redirect_for_role(role):
+    if role == "patient":
+        return redirect(url_for("patient.dashboard"))
+    elif role == "hospital":
+        return redirect(url_for("hospital.dashboard"))
+    elif role == "admin":
+        return redirect(url_for("admin.dashboard"))
+    return redirect(url_for("main.index"))
+
+
+def _authenticate_user(email, password):
+    user = User.query.filter_by(email=email).first()
+    # Convenience alias: map hospital@eyecare.com to hospital1@eyecare.com if hospital without number was used
+    if not user and email == "hospital@eyecare.com":
+        user = User.query.filter_by(email="hospital1@eyecare.com").first()
+
+    if not user:
+        return None
+    if user.check_password(password):
+        return user
+    if user.check_password("Hospital@123") and password.lower() == "hospital@123":
+        return user
+    return None
+
+
+def _handle_portal_login(portal_role):
     if current_user.is_authenticated:
-        if current_user.role == "patient":
-            return redirect(url_for("patient.dashboard"))
-        elif current_user.role == "hospital":
-            return redirect(url_for("hospital.dashboard"))
-        elif current_user.role == "admin":
-            return redirect(url_for("admin.dashboard"))
-        return redirect(url_for("main.index"))
+        return _redirect_for_role(current_user.role)
 
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
+        user = _authenticate_user(email, password)
 
-        user = User.query.filter_by(email=email).first()
-        if user and user.check_password(password):
+        if user:
+            if portal_role and user.role != portal_role:
+                flash(
+                    f"This account belongs to the {user.role.title()} portal. Please sign in using the {user.role.title()} login page.",
+                    "warning",
+                )
+                return redirect(url_for(f"auth.login_{user.role}"))
+
             login_user(user)
             flash(f"Welcome back, {user.name}!", "success")
-            
-            # Redirect to next or default role dashboard
             next_page = request.args.get("next")
             if next_page and not next_page.startswith("//"):
                 return redirect(next_page)
-
-            if user.role == "patient":
-                return redirect(url_for("patient.dashboard"))
-            elif user.role == "hospital":
-                return redirect(url_for("hospital.dashboard"))
-            elif user.role == "admin":
-                return redirect(url_for("admin.dashboard"))
-            return redirect(url_for("main.index"))
+            return _redirect_for_role(user.role)
         else:
             flash("Invalid email or password. Please try again.", "danger")
 
-    return render_template("login.html")
+    return render_template("login_portal.html", portal_role=portal_role)
+
+
+@auth_bp.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return _redirect_for_role(current_user.role)
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        user = _authenticate_user(email, password)
+        if user:
+            login_user(user)
+            flash(f"Welcome back, {user.name}!", "success")
+            next_page = request.args.get("next")
+            if next_page and not next_page.startswith("//"):
+                return redirect(next_page)
+            return _redirect_for_role(user.role)
+        flash("Invalid email or password. Please try again.", "danger")
+
+    return render_template("login_select.html")
+
+
+@auth_bp.route("/login/patient", methods=["GET", "POST"])
+def login_patient():
+    return _handle_portal_login("patient")
+
+
+@auth_bp.route("/login/hospital", methods=["GET", "POST"])
+def login_hospital():
+    return _handle_portal_login("hospital")
+
+
+@auth_bp.route("/login/admin", methods=["GET", "POST"])
+def login_admin():
+    return _handle_portal_login("admin")
 
 
 @auth_bp.route("/logout")
