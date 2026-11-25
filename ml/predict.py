@@ -31,7 +31,7 @@ def load_model_once():
             import tensorflow as tf
             # Suppress oneDNN / verbose info
             os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
-            _MODEL = tf.keras.models.load_model(model_path)
+            _MODEL = tf.keras.models.load_model(model_path, compile=False)
             print(f"[ML Module] Successfully loaded real model from {model_path}")
         except Exception as e:
             print(f"[ML Module] Warning: Failed to load model file ({e}). Falling back to DEMO MODE.")
@@ -132,27 +132,22 @@ def crop_black_borders(img, tol=10):
     return check_shape
 
 
-def preprocess(path):
+def preprocess(path, img_size=380):
     """
-    Preprocess fundus image:
+    Preprocess fundus image to match EfficientNetB3 training:
     1. Read and crop black borders
-    2. Resize to 256x256
-    3. Apply CLAHE on L channel in LAB color space
-    4. Return float32 array with pixel values in 0-255 (no extra normalization)
+    2. Resize to 380x380 (or target img_size)
+    3. Apply Ben Graham local color normalization
+    4. Return float32 array with pixel values in 0-255
     """
     img, warning = validate_image(path)
     cropped = crop_black_borders(img)
-    resized = cv2.resize(cropped, (256, 256), interpolation=cv2.INTER_AREA)
+    resized = cv2.resize(cropped, (img_size, img_size), interpolation=cv2.INTER_AREA)
 
-    # CLAHE on L channel of LAB
-    lab = cv2.cvtColor(resized, cv2.COLOR_BGR2LAB)
-    l, a, b = cv2.split(lab)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    l_enhanced = clahe.apply(l)
-    lab_enhanced = cv2.merge((l_enhanced, a, b))
-    enhanced_bgr = cv2.cvtColor(lab_enhanced, cv2.COLOR_LAB2BGR)
+    # Ben Graham local color normalization (matches Kaggle training)
+    enhanced_bgr = cv2.addWeighted(resized, 4, cv2.GaussianBlur(resized, (0, 0), img_size / 30), -4, 128)
 
-    # Pixel values in 0-255 with no extra normalization as required
+    # Pixel values in 0-255 as required by EfficientNet
     return enhanced_bgr.astype(np.float32), warning
 
 
@@ -191,23 +186,43 @@ def generate_demo_gradcam(img_shape, seed_val=42):
 
 def grad_cam(model, preprocessed_img, last_conv="top_conv"):
     """
-    Compute Grad-CAM heatmap on layer 'top_conv' using TensorFlow GradientTape.
-    Falls back to simulated heatmap if model is None or on computation error.
+    Compute Grad-CAM heatmap on the final convolutional feature map using TensorFlow GradientTape.
+    Supports both flat models and nested Functional backbones (e.g. EfficientNetB3).
     """
     if model is None:
         return generate_demo_gradcam(preprocessed_img.shape), 0
 
     try:
         import tensorflow as tf
-        grad_model = tf.keras.models.Model(
-            inputs=model.input,
-            outputs=[model.get_layer(last_conv).output, model.output]
-        )
-        # Input with pixel values 0-255 (no extra normalization)
         img_input = np.expand_dims(preprocessed_img, axis=0)
 
+        # Check if backbone is a nested Functional model (e.g. efficientnetb3)
+        nested_backbone = None
+        head_start_idx = None
+        for idx, layer in enumerate(model.layers):
+            if isinstance(layer, tf.keras.Model) and any(sl.name == last_conv for sl in layer.layers):
+                nested_backbone = layer
+                head_start_idx = idx + 1
+                break
+
         with tf.GradientTape() as tape:
-            conv_outputs, predictions = grad_model(img_input)
+            if nested_backbone is not None:
+                conv_outputs = nested_backbone(img_input, training=False)
+                tape.watch(conv_outputs)
+                x = conv_outputs
+                for head_layer in model.layers[head_start_idx:]:
+                    try:
+                        x = head_layer(x, training=False)
+                    except TypeError:
+                        x = head_layer(x)
+                predictions = x
+            else:
+                grad_model = tf.keras.models.Model(
+                    inputs=model.input,
+                    outputs=[model.get_layer(last_conv).output, model.output]
+                )
+                conv_outputs, predictions = grad_model(img_input)
+
             pred_class = tf.argmax(predictions[0])
             loss = predictions[:, pred_class]
 
